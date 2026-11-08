@@ -1,0 +1,26 @@
+{
+  "name": "factory",
+  "description": "Curated engineering skills installed in every Trajectonomics Factory repository.",
+  "sources": [
+    {
+      "source": "mattpocock/skills",
+      "version": "v1.3.2",
+      "ref": "d1478fcb140db0b93c0c8df17bcfd311844749d0",
+      "skills": [
+        "grilling",
+        "grill-with-docs",
+        "domain-modeling",
+        "to-spec",
+        "to-tickets",
+        "implement",
+        "implement-spec",
+        "tdd",
+        "code-review",
+        "pr",
+        "triage",
+        "diagnosing-bugs",
+        "retro"
+      ]
+    }
+  ]
+}

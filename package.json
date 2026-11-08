@@ -7,5 +7,11 @@
     "url": "https://github.com/trajectonomics/internal-skills.git"
   },
   "license": "MIT",
-  "private": false
+  "private": false,
+  "bin": {
+    "install-skills-profile": "./scripts/install-profile.mjs"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
 }

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  detectJsonFormat,
+  formatJson,
   loadProfile,
   mergeSkillsField,
   profileEntries,
@@ -60,6 +62,28 @@ test('merge rejects a non-array package.json skills field', () => {
   assert.throws(
     () => mergeSkillsField({ source: 'mattpocock/skills' }, []),
     /"skills" must be an array/
+  );
+});
+
+test('preserves tab indentation and a missing trailing newline', () => {
+  const raw = '{\n\t"name": "tabbed",\n\t"private": true\n}';
+  const format = detectJsonFormat(raw);
+
+  assert.deepEqual(format, { indent: '\t', trailingNewline: false, eol: '\n' });
+  assert.equal(
+    formatJson({ name: 'tabbed', private: true, skills: [] }, format),
+    '{\n\t"name": "tabbed",\n\t"private": true,\n\t"skills": []\n}'
+  );
+});
+
+test('preserves space indentation and a trailing newline', () => {
+  const raw = '{\n    "name": "spaced"\n}\n';
+  const format = detectJsonFormat(raw);
+
+  assert.deepEqual(format, { indent: '    ', trailingNewline: true, eol: '\n' });
+  assert.equal(
+    formatJson({ name: 'spaced', skills: [] }, format),
+    '{\n    "name": "spaced",\n    "skills": []\n}\n'
   );
 });
 

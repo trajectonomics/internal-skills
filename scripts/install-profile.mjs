@@ -5,8 +5,11 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 
 import {
+  DEFAULT_JSON_FORMAT,
   DEFAULT_PROFILE,
   SKILLS_CLI,
+  detectJsonFormat,
+  formatJson,
   loadProfile,
   mergeSkillsField,
 } from '../lib/skill-profile.mjs';
@@ -29,7 +32,10 @@ Unrelated "skills" entries in the target package.json are preserved.`);
 
 async function readPackageJson(packagePath) {
   if (!existsSync(packagePath)) {
-    return { name: basename(process.cwd()), private: true };
+    return {
+      packageJson: { name: basename(process.cwd()), private: true },
+      format: DEFAULT_JSON_FORMAT,
+    };
   }
   const raw = await readFile(packagePath, 'utf8');
   let value;
@@ -41,7 +47,7 @@ async function readPackageJson(packagePath) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${packagePath}: expected a JSON object`);
   }
-  return value;
+  return { packageJson: value, format: detectJsonFormat(raw) };
 }
 
 async function main(argv) {
@@ -70,10 +76,10 @@ async function main(argv) {
 
   const { profile, entries } = await loadProfile(profilePath);
   const packagePath = resolve(process.cwd(), 'package.json');
-  const packageJson = await readPackageJson(packagePath);
+  const { packageJson, format } = await readPackageJson(packagePath);
   const skills = mergeSkillsField(packageJson.skills, entries);
   packageJson.skills = skills;
-  const rendered = `${JSON.stringify(packageJson, null, 2)}\n`;
+  const rendered = formatJson(packageJson, format);
 
   if (dryRun) {
     console.log(`Would update ${packagePath}`);

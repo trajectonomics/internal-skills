@@ -14,6 +14,10 @@ Factory repositories install a pinned set of upstream engineering skills (grilli
 npx -y --package=github:trajectonomics/internal-skills#main install-skills-profile
 ```
 
+Factory repositories intentionally track this profile on `main`: the upstream skill pins are fixed, but the profile contents are not. Editing `profiles/factory.json` on `main` changes every repository that re-runs the installer.
+
+The installer requires `npx` and network access at install time.
+
 The checked profile is [`profiles/factory.json`](profiles/factory.json). It pins upstream to release `v1.3.2` at commit `d1478fcb140db0b93c0c8df17bcfd311844749d0`. No upstream skill content is copied into this repository. See [`docs/skill-profile.md`](docs/skill-profile.md) for the profile format, the CLI tests behind this design, and how to change the pin.
 
 ## Org-Specific Skills

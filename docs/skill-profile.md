@@ -13,6 +13,14 @@ From the repository that should receive the profile:
 npx -y --package=github:trajectonomics/internal-skills#main install-skills-profile
 ```
 
+`#main` is intentional. Factory repositories track the profile itself on `main`:
+the upstream skill pins are fixed, but the profile contents are not. Editing
+`profiles/factory.json` on `main` changes every repository that re-runs the
+installer.
+
+The installer requires `npx` and network access at install time: `npx` fetches
+`skills@1.7.6`, and `experimental_sync` fetches the pinned upstream commit.
+
 The command:
 
 1. Reads `profiles/factory.json`.
@@ -58,7 +66,9 @@ from this repository with `npx skills add trajectonomics/internal-skills -y`.
 ## What the `skills` CLI can and cannot do
 
 Tested on 2026-11-08 with `skills@1.7.6`, the current npm `latest`. All tests
-ran in scratch directories under `/tmp`, outside this repository.
+ran in scratch directories under `/tmp`, outside this repository. Run
+`bash scripts/reproduce-cli-findings.sh` to reproduce both observations below;
+it uses the network and creates its own temporary scratch directory.
 
 ### `skills add` accepts a list and a ref, but does not make a reliable pinned profile
 
@@ -120,3 +130,19 @@ dependencies. `scripts/install-profile.mjs` therefore does the smallest
 missing step: it merges this repository's checked profile into the target's
 official `skills` field and delegates installation and locking to
 `experimental_sync`. It does not copy or reimplement skill installation.
+
+## Regression checks
+
+`npm test` runs `test/install-profile.test.mjs`, which executes the installer's
+merge-and-sync path in a scratch directory with a fake `npx`. The fake asserts
+the exact CLI arguments and writes a lock from the target's `skills` field; the
+test then asserts that every profile skill has a lock entry with the profile's
+`source` and `ref`. It also covers preserving tab or space indentation and the
+trailing newline in the target `package.json`.
+
+For a real-CLI check, run `bash scripts/reproduce-cli-findings.sh`. It clones
+the pinned tag, runs `skills add repo@tag` and asserts it installed current
+`main` instead of the tag, then runs `experimental_sync` from a `package.json`
+`skills` entry and asserts it installed the pinned copy and wrote the expected
+`ref` to the lock. Run this script as well as `npm test` whenever `SKILLS_CLI`
+in `lib/skill-profile.mjs` is bumped.

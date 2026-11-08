@@ -87,6 +87,25 @@ test('preserves space indentation and a trailing newline', () => {
   );
 });
 
+test('falls back to two spaces for an empty object', () => {
+  for (const raw of ['{}', '{\n}']) {
+    const format = detectJsonFormat(raw);
+    assert.equal(format.indent, '  ');
+    assert.equal(
+      formatJson({ name: 'empty', skills: [] }, format),
+      '{\n  "name": "empty",\n  "skills": []\n}'
+    );
+  }
+});
+
+test('leaves CR-only JSON on its existing compact path', () => {
+  assert.deepEqual(detectJsonFormat('{\r}'), {
+    indent: null,
+    trailingNewline: false,
+    eol: '\n',
+  });
+});
+
 test('profile validation rejects mutable or partial pins', () => {
   assert.throws(
     () =>

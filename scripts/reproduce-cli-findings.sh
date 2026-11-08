@@ -41,8 +41,25 @@ git clone --quiet --depth 1 --branch "$TAG" "https://github.com/$PROFILE_SOURCE.
 SKILL_FILE="$(find "$SCRATCH/upstream" -type d -name "$SKILL" -print -quit)/SKILL.md"
 [ -f "$SKILL_FILE" ] || fail "could not find $SKILL in the $TAG checkout"
 SKILL_PATH="${SKILL_FILE#"$SCRATCH/upstream/"}"
-curl -fsSL "https://raw.githubusercontent.com/$PROFILE_SOURCE/main/$SKILL_PATH" \
-  -o "$SCRATCH/main-SKILL.md"
+if ! curl -fsSL "https://raw.githubusercontent.com/$PROFILE_SOURCE/main/$SKILL_PATH" \
+  -o "$SCRATCH/main-SKILL.md"; then
+  cat >&2 <<EOF
+SKIP: could not fetch the current main copy of $SKILL_PATH.
+This check is time-dependent: it compares the pinned $TAG file with current
+main, so it cannot run when that file is unavailable. The experimental_sync
+check did not run.
+EOF
+  exit 2
+fi
+if cmp -s "$SKILL_FILE" "$SCRATCH/main-SKILL.md"; then
+  cat >&2 <<EOF
+SKIP: current main still matches $TAG for $SKILL_PATH.
+This check is time-dependent: skills add's non-pinning behaviour is only
+observable while main differs from the pinned tag. Re-run after upstream main
+moves past $TAG. The experimental_sync check did not run.
+EOF
+  exit 2
+fi
 
 echo
 echo "1) skills add $PROFILE_SOURCE@$TAG --skill $SKILL"

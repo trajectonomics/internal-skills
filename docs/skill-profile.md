@@ -137,12 +137,15 @@ official `skills` field and delegates installation and locking to
 merge-and-sync path in a scratch directory with a fake `npx`. The fake asserts
 the exact CLI arguments and writes a lock from the target's `skills` field; the
 test then asserts that every profile skill has a lock entry with the profile's
-`source` and `ref`. It also covers preserving tab or space indentation and the
-trailing newline in the target `package.json`.
+`source` and `ref`. That installer test covers a tab-indented target
+`package.json` with no trailing newline and a target file with a UTF-8 BOM.
+The formatting tests in `test/skill-profile.test.mjs` cover tab and space
+indentation, trailing newlines, and the empty-object fallback.
 
 For a real-CLI check, run `bash scripts/reproduce-cli-findings.sh`. It clones
 the pinned tag, runs `skills add repo@tag` and asserts it installed current
 `main` instead of the tag, then runs `experimental_sync` from a `package.json`
 `skills` entry and asserts it installed the pinned copy and wrote the expected
 `ref` to the lock. Run this script as well as `npm test` whenever `SKILLS_CLI`
-in `lib/skill-profile.mjs` is bumped.
+in `lib/skill-profile.mjs` is bumped. If current main cannot be fetched or still
+matches the pinned tag, the script exits 2 with a time-dependent explanation.

@@ -38,16 +38,17 @@ async function readPackageJson(packagePath) {
     };
   }
   const raw = await readFile(packagePath, 'utf8');
+  const content = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw;
   let value;
   try {
-    value = JSON.parse(raw);
+    value = JSON.parse(content);
   } catch (error) {
     throw new Error(`cannot parse ${packagePath}: ${error.message}`);
   }
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${packagePath}: expected a JSON object`);
   }
-  return { packageJson: value, format: detectJsonFormat(raw) };
+  return { packageJson: value, format: detectJsonFormat(content) };
 }
 
 async function main(argv) {

@@ -6,6 +6,8 @@ Internal AI coding agent skills for the Trajectonomics ecosystem, managed via [s
 
 - **`pick-the-issue`**: Discovers open GitHub issues in the current repository only, filters out blocked issues and issues actively handled by existing T3 Code sessions, provides an executive summary, and routes the work through Matt Pocock's skills framework (`ask-matt`) to advise on the exact commands and workflow.
 
+- **`human-go`, `human-decline`, `human-postpone`, `human-help`**: The owner's words for Factory Ideas. The owner invokes them (`/human-go <repo>#<n>`) and the agent applies the labels. The rules live in `docs/next-steps-runbook.md` of `trajectonomics/factory`; the skills read them from there.
+
 ## Curated Engineering Profile
 
 Factory repositories install a pinned set of upstream engineering skills (grilling, grill-with-docs, domain-modeling, to-spec, to-tickets, implement, implement-spec, tdd, code-review, pr, triage, diagnosing-bugs, retro) from [`mattpocock/skills`](https://github.com/mattpocock/skills) with one command:

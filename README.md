@@ -22,7 +22,7 @@ The installer requires `npx` and network access at install time.
 
 The checked profile is [`profiles/factory.json`](profiles/factory.json). It pins `mattpocock/skills` to release `v1.3.2` at commit `d1478fcb140db0b93c0c8df17bcfd311844749d0` and `cloudflare/skills` to commit `6eb6c781aa9b6438e0c7307bd102788a75fe1a6d` (upstream `main` on 2026-11-06; upstream has no tags, so its `version` label is `main@2026-11-06`). No upstream skill content is copied into this repository, so no Apache-2.0 NOTICE is needed. See [`docs/skill-profile.md`](docs/skill-profile.md) for the profile format, the CLI tests behind this design, and how to change a pin.
 
-The Cloudflare skills are reference guidance only: they grant no authority, each repository's own rules still hold, and the upstream plugin's Cloudflare MCP server is not installed.
+The Cloudflare skills are reference guidance only: they grant no authority, each repository's own rules still hold (for example, live Cloudflare or Wrangler changes in `infra` need the owner's per-task opt-in, and Factory Runs never touch a cloud platform), and the upstream plugin's Cloudflare MCP server is not installed. One known trade-off: the `cloudflare` router skill names upstream skills this profile does not install; fall back to the Cloudflare documentation when it points at one.
 
 ## Org-Specific Skills
 

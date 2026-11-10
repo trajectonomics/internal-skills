@@ -73,6 +73,30 @@
       "skillPath": "skills/productivity/handoff/SKILL.md",
       "computedHash": "8ebcf017c0a59681f3c2f1ebf90e32f481954a068181a75151c44aa2c55de4b4"
     },
+    "human-decline": {
+      "source": "trajectonomics/internal-skills",
+      "sourceType": "github",
+      "skillPath": "skills/human-decline/SKILL.md",
+      "computedHash": "e866131b480f9781b69d0ea6720daf96239db38fcb6c1064eaf5bc479854c2e8"
+    },
+    "human-go": {
+      "source": "trajectonomics/internal-skills",
+      "sourceType": "github",
+      "skillPath": "skills/human-go/SKILL.md",
+      "computedHash": "37989fb47fe852415a5f7b6f626a841a1c3b3f449cbaaf539889b5c900748d35"
+    },
+    "human-help": {
+      "source": "trajectonomics/internal-skills",
+      "sourceType": "github",
+      "skillPath": "skills/human-help/SKILL.md",
+      "computedHash": "e22486fa7c43d3904f9911abd2827f2de865f09babcf9afd990b157265e1a4b6"
+    },
+    "human-postpone": {
+      "source": "trajectonomics/internal-skills",
+      "sourceType": "github",
+      "skillPath": "skills/human-postpone/SKILL.md",
+      "computedHash": "de45bfd453ba18dc3a220b4c0b8c9d103342a92e04b6430d9762bee6513c81cc"
+    },
     "implement": {
       "source": "mattpocock/skills",
       "sourceType": "github",

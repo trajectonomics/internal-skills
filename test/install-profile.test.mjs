@@ -115,6 +115,15 @@ test('installer merges the profile and writes pinned lock refs through sync', as
       assert.equal(lock.skills[name].ref, entry.ref);
     }
   }
+
+  const mattpocock = entries.find((entry) => entry.source === 'mattpocock/skills');
+  assert.equal(lock.skills.implement.source, 'mattpocock/skills');
+  assert.equal(lock.skills.implement.ref, mattpocock.ref);
+
+  const cloudflare = entries.find((entry) => entry.source === 'cloudflare/skills');
+  assert.ok(cloudflare, 'factory profile has a cloudflare/skills source');
+  assert.equal(lock.skills.wrangler.source, 'cloudflare/skills');
+  assert.equal(lock.skills.wrangler.ref, cloudflare.ref);
 });
 
 test('installer accepts a target package.json with a UTF-8 BOM', async () => {
@@ -124,5 +133,7 @@ test('installer accepts a target package.json with a UTF-8 BOM', async () => {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.equal(packageRaw.charCodeAt(0), 0x7b);
   assert.match(packageRaw, /^\{\n\t"name": "bom",\n\t"private": true,\n\t"skills": /);
-  assert.equal(lock.skills.implement.ref, (await loadProfile()).entries[0].ref);
+  const { entries } = await loadProfile();
+  const mattpocock = entries.find((entry) => entry.source === 'mattpocock/skills');
+  assert.equal(lock.skills.implement.ref, mattpocock.ref);
 });

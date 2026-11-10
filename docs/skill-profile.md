@@ -2,8 +2,9 @@
 
 `profiles/factory.json` is the checked profile of upstream engineering skills
 that every Trajectonomics Factory repository installs. It names skills from
-[`mattpocock/skills`](https://github.com/mattpocock/skills); no upstream skill
-content is copied into this repository.
+[`mattpocock/skills`](https://github.com/mattpocock/skills) and
+[`cloudflare/skills`](https://github.com/cloudflare/skills); no upstream skill
+content is copied into this repository, so no Apache-2.0 NOTICE is needed.
 
 ## Install
 
@@ -44,21 +45,45 @@ commit and a content hash for every installed skill.
 
 ## Profile contents
 
-The current profile pins `mattpocock/skills` at release `v1.3.2`, commit
+The current profile has two sources.
+
+`mattpocock/skills` is pinned at release `v1.3.2`, commit
 `d1478fcb140db0b93c0c8df17bcfd311844749d0`, and installs:
 
 `grilling`, `grill-with-docs`, `domain-modeling`, `to-spec`, `to-tickets`,
 `implement`, `implement-spec`, `tdd`, `code-review`, `pr`, `triage`,
 `diagnosing-bugs`, `retro`.
 
-The commit SHA, not the tag name, is the pin because tags can move. The
-`version` field is kept for humans. To change the profile, update the source
-entry to a new full commit SHA and adjust the skill list.
+`cloudflare/skills` is pinned at commit
+`6eb6c781aa9b6438e0c7307bd102788a75fe1a6d`, upstream `main` on 2026-11-06.
+Upstream has no tags or releases, so its `version` label is
+`main@2026-11-06`. It installs:
 
-Multiple sources are allowed. This leaves room for the Cloudflare bundle in
-[issue #3](https://github.com/trajectonomics/internal-skills/issues/3) to add a
-second source without changing the installer. The installer does not remove
-unrelated skills already installed in the target repository.
+`cloudflare`, `cf-cli`, `wrangler`, `workers-best-practices`,
+`workers-development`, `cloudflare-email-service`, `durable-objects`,
+`cloudflare-one`.
+
+The commit SHA, not the tag name, is the pin because tags can move. The
+`version` field is kept for humans. To change either pin, update the source
+entry to a new full commit SHA in a pull request, adjust the skill list if
+needed, and re-run `npm test` and `bash scripts/reproduce-cli-findings.sh`.
+
+Multiple sources are allowed, and their order does not matter. Two sources may
+not ship the same skill name, within one source or across sources, because the
+target installs every skill into the flat `.agents/skills/<name>` directory;
+`profileEntries` rejects it. The installer does not remove unrelated skills
+already installed in the target repository.
+
+The Cloudflare skills are reference guidance and grant no authority: each
+repository's own rules still hold, for example `infra`'s rule that live
+Cloudflare or Wrangler changes need the owner's per-task opt-in, and Factory
+Runs never touch a cloud platform. The upstream plugin's Cloudflare MCP server
+is not installed.
+
+Known trade-off: the `cloudflare` router skill mentions upstream skills that
+this profile does not install (`basin`, `k2`, `nextjs-on-cloudflare` and
+others). An agent that follows the router to one of them should fall back to
+the Cloudflare documentation.
 
 Org-specific skills such as `pick-the-issue` are still installed separately
 from this repository with `npx skills add trajectonomics/internal-skills -y`.
@@ -137,10 +162,13 @@ official `skills` field and delegates installation and locking to
 merge-and-sync path in a scratch directory with a fake `npx`. The fake asserts
 the exact CLI arguments and writes a lock from the target's `skills` field; the
 test then asserts that every profile skill has a lock entry with the profile's
-`source` and `ref`. That installer test covers a tab-indented target
-`package.json` with no trailing newline and a target file with a UTF-8 BOM.
-The formatting tests in `test/skill-profile.test.mjs` cover tab and space
-indentation, trailing newlines, and the empty-object fallback.
+`source` and `ref`, including a Cloudflare skill and a `mattpocock/skills`
+one. That installer test covers a tab-indented target `package.json` with no
+trailing newline and a target file with a UTF-8 BOM. `test/skill-profile.test.mjs`
+checks that the profile pins both sources, that the Cloudflare source lists
+exactly the eight skills above, and that no skill name repeats across sources.
+The formatting tests there cover tab and space indentation, trailing newlines,
+and the empty-object fallback.
 
 For a real-CLI check, run `bash scripts/reproduce-cli-findings.sh`. It clones
 the pinned tag, runs `skills add repo@tag` and asserts it installed current

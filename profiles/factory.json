@@ -21,6 +21,21 @@
         "diagnosing-bugs",
         "retro"
       ]
+    },
+    {
+      "source": "cloudflare/skills",
+      "version": "main@2026-11-06",
+      "ref": "6eb6c781aa9b6438e0c7307bd102788a75fe1a6d",
+      "skills": [
+        "cloudflare",
+        "cf-cli",
+        "wrangler",
+        "workers-best-practices",
+        "workers-development",
+        "cloudflare-email-service",
+        "durable-objects",
+        "cloudflare-one"
+      ]
     }
   ]
 }

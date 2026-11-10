@@ -10,7 +10,7 @@ Internal AI coding agent skills for the Trajectonomics ecosystem, managed via [s
 
 ## Curated Engineering Profile
 
-Factory repositories install a pinned set of upstream engineering skills (grilling, grill-with-docs, domain-modeling, to-spec, to-tickets, implement, implement-spec, tdd, code-review, pr, triage, diagnosing-bugs, retro) from [`mattpocock/skills`](https://github.com/mattpocock/skills) with one command:
+Factory repositories install a pinned set of upstream engineering skills (grilling, grill-with-docs, domain-modeling, to-spec, to-tickets, implement, implement-spec, tdd, code-review, pr, triage, diagnosing-bugs, retro) from [`mattpocock/skills`](https://github.com/mattpocock/skills), plus Cloudflare skills (cloudflare, cf-cli, wrangler, workers-best-practices, workers-development, cloudflare-email-service, durable-objects, cloudflare-one) from [`cloudflare/skills`](https://github.com/cloudflare/skills), with one command:
 
 ```bash
 npx -y --package=github:trajectonomics/internal-skills#main install-skills-profile
@@ -20,7 +20,9 @@ Factory repositories intentionally track this profile on `main`: the upstream sk
 
 The installer requires `npx` and network access at install time.
 
-The checked profile is [`profiles/factory.json`](profiles/factory.json). It pins upstream to release `v1.3.2` at commit `d1478fcb140db0b93c0c8df17bcfd311844749d0`. No upstream skill content is copied into this repository. See [`docs/skill-profile.md`](docs/skill-profile.md) for the profile format, the CLI tests behind this design, and how to change the pin.
+The checked profile is [`profiles/factory.json`](profiles/factory.json). It pins `mattpocock/skills` to release `v1.3.2` at commit `d1478fcb140db0b93c0c8df17bcfd311844749d0` and `cloudflare/skills` to commit `6eb6c781aa9b6438e0c7307bd102788a75fe1a6d` (upstream `main` on 2026-11-06; upstream has no tags, so its `version` label is `main@2026-11-06`). No upstream skill content is copied into this repository, so no Apache-2.0 NOTICE is needed. See [`docs/skill-profile.md`](docs/skill-profile.md) for the profile format, the CLI tests behind this design, and how to change a pin.
+
+The Cloudflare skills are reference guidance only: they grant no authority, each repository's own rules still hold, and the upstream plugin's Cloudflare MCP server is not installed.
 
 ## Org-Specific Skills
 

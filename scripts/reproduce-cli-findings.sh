@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROFILE="$REPO_ROOT/profiles/factory.json"
+PROFILE_SOURCE="mattpocock/skills"
 SKILL="implement-spec"
 SKILLS_CLI="$(
   node --input-type=module -e "
@@ -14,19 +15,17 @@ SKILLS_CLI="$(
 profile_value() {
   node -e "
     const profile = require(process.argv[1]);
-    const source = profile.sources[0];
+    const source = profile.sources.find((entry) => entry.source === process.argv[3]);
+    if (!source) {
+      console.error('profile has no ' + process.argv[3] + ' source');
+      process.exit(1);
+    }
     process.stdout.write(String(source[process.argv[2]]));
-  " "$PROFILE" "$1"
+  " "$PROFILE" "$1" "$PROFILE_SOURCE"
 }
 
-PROFILE_SOURCE="$(profile_value source)"
 TAG="$(profile_value version)"
 REF="$(profile_value ref)"
-
-if [ "$PROFILE_SOURCE" != "mattpocock/skills" ]; then
-  echo "This reproduction expects the first profile source to be mattpocock/skills." >&2
-  exit 1
-fi
 
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/skills-cli-findings.XXXXXX")"
 trap 'rm -rf "$SCRATCH"' EXIT

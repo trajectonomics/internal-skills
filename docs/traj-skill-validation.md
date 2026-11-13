@@ -10,7 +10,7 @@ from a conversation and answers what-ifs correctly.* The owner's answer on the S
 the test to reach **the pinned `sim-core` public documentation and the `check()` error
 output** as well as the CLI's own `schema`, because the Scenario document's shape is
 `sim-core`'s ([cli ADR 0024](https://github.com/trajectonomics/cli/blob/main/docs/adr/0024-scenario-documents-and-overrides.md)).
-Both the skill and this note say so.
+The skill's *Scenarios* paragraph is where an agent is told to use them.
 
 The protocol has two halves, and only the second can show that the skill taught anything.
 
@@ -58,40 +58,44 @@ Two modes judge a ledger some *agent* built from the same conversation:
 
 [`test/traj-validation.test.mjs`](../test/traj-validation.test.mjs) shows the checker is real:
 it passes on the correct ledger, and fails on a wrong amount in the setup, on a wrong
-expectation, and on a Scenario document `sim-core` rejects. It skips with a reason when no
-`traj` is runnable, so `npm test` needs neither the network nor the CLI.
+expectation, on a Scenario document `sim-core` rejects, on `--verify` against a ledger with an
+extra transaction, and on `--verify-scenario` against a what-if in whole baht. It skips with a
+reason when no `traj` is runnable, so `npm test` needs neither the network nor the CLI.
 
 This half **cannot** show that the skill taught anything. It compares `traj` with `traj`.
 
 ## The harness half
 
-The same prompt was given to each harness, with an empty `TRAJ_HOME` prepared by `traj init`,
-twice: **baseline** (the CLI and its `schema` output only) and **treatment** (the same, with
-`npx skills add … --skill traj` installed into the project). The prompt named the tool and how
-to invoke it, then the conversation, then: *every number you tell them must come from the
-tool.* A second, scenario-only prompt then asked for the 25,000 version to be **kept as a
+Each harness got two prompts, each with its own empty `TRAJ_HOME` prepared by `traj init`, and
+each run twice: **baseline** (the CLI and its `schema` output only) and **treatment** (the
+same, with `npx skills add … --skill traj` installed into the project). The prompt named the
+tool and how to invoke it, then the conversation, then: *every number you tell them must come
+from the tool.* The second prompt additionally asked for the 25,000 version to be **kept as a
 named what-if**.
 
 ### Record and read
 
 | Harness | Baseline | Treatment |
 | --- | --- | --- |
-| Claude Code 2.1.323 | 242,800.00 and 60,800.00 — **correct**; 8 rows, one 3-posting opening | 242,800.00 and 60,800.00 — **correct**; 8 rows with an external reference on each write; kept the what-if in a separate scratch ledger (`work/whatif-home`) |
+| Claude Code 2.1.323 | 242,800.00 and 60,800.00 — **correct**; 8 rows, one 3-posting opening | 242,800.00 and 60,800.00 — **correct**; 8 rows with an external reference on each write; kept the what-if in a separate scratch ledger |
 | Pi, `deepseek-v4.1-flash` | 242,800.00 and 60,800.00 — **correct**; 9 rows | 242,800.00 and 60,800.00 — **correct**; 8 rows |
 
-All four ledgers pass `--verify`. Both baselines also got the cross-account arithmetic of the
-what-if right, and all four declined the financial-independence date with a reason.
+All four ledgers pass `--verify`, and both baselines also got the cross-account arithmetic of
+the what-if right. All four declined the financial-independence date with a reason.
 
 ### Scenario
 
 | Harness | Baseline | Treatment |
 | --- | --- | --- |
-| Claude Code 2.1.323 | stored `base` and a fork `save-25k`; the fork's flows are **whole baht** (`85000`) | stored `base-20k` and a fork `savings-25k`; the fork's flows are **minor units** (`8500000`) |
+| Claude Code 2.1.323 | stored `base` and a fork `save-25k` whose flows are **whole baht** (`85000`) — `--verify-scenario` fails | stored `base-20k` and a fork `savings-25k` in **minor units** (`8500000`) — passes |
+| Pi, `deepseek-v4.1-flash` | `base-20k` and `save-25k`, **minor units**, passes | `plan-20000` and `savings-25000`, **minor units**, passes |
 
-`--verify-scenario` passes the treatment and fails the baseline. The Scenario amounts are
-integers of minor units like every other amount in `traj`, and `check()` accepts either
-scale, so a document in whole baht is schema-valid and wrong by a hundred times. The skill
-now states that unit in its Scenario paragraph, which it did not before this run.
+So the whole-baht document is **model-dependent, not skill-caused**: one baseline produced it
+and the other did not. It is still the sharpest failure these runs found — the document is
+schema-valid, the fork reports the change, and every number in it is a hundred times too
+small — and the skill now states the unit in its *Scenarios* paragraph instead of leaving it
+to be inferred from the ledger rules. That removes the inference; it does not prove the
+inference was the cause.
 
 ### What the skill added
 
@@ -101,9 +105,6 @@ the missing `projection` command from `schema` rather than guessing. The baselin
 same numbers and left the tax position implicit. On a CLI that only records and reads, that is
 the whole measurable difference, and it is worth saying plainly rather than presenting a tie
 as a win.
-
-On Scenario it added a **correct document**, which is the one place these runs separated
-baseline from treatment on the result itself.
 
 One difference is a behaviour change worth arguing about: the Pi **baseline** answered the
 what-if by hand (793,800.00 in the current account, 25,000.00 in savings), and the Pi
@@ -124,39 +125,61 @@ Three things, all found by running the protocol rather than reasoning about it:
    name. Claude Code recorded the two opening balances as one multi-posting row and named its
    accounts freely; the books were identical. Counting rows tests a recording style, not the
    answer, so `--verify` now compares only the net worth and the period result.
-3. The Scenario unit: `skills/traj/SKILL.md` now says its amounts are integer minor units and
-   that `check()` will not catch a document a hundred times too small. That is the only change
-   to the skill these runs produced.
+3. The Scenario unit, above. That is the only change to `skills/traj/SKILL.md` these runs
+   produced.
+
+## Re-running this
+
+The scratch ledgers were deleted with the run: a `TRAJ_HOME` kept on this machine is not
+evidence a month later, so nothing here cites one as if it were durable. To regenerate an
+arm, in a new directory with its own empty `TRAJ_HOME`:
+
+```bash
+TRAJ_HOME="$PWD/home" npx -y @trajectonomics/cli@latest init
+# treatment only: npx skills add trajectonomics/internal-skills --skill traj -a claude-code -y
+claude -p "$(cat prompt.txt)" --dangerously-skip-permissions    # or: pi -p "$(cat prompt.txt)"
+TRAJ="npx -y @trajectonomics/cli@latest" node scripts/check-traj-validation.mjs --verify "$PWD/home"
+```
+
+`prompt.txt` is the conversation from `test/fixtures/traj/fixture.json` with this framing:
+the tool is `traj`, invoked as `npx -y @trajectonomics/cli@latest <args>`, its data directory
+is `TRAJ_HOME`, work only in this directory, every number must come from the tool, and finish
+by writing `answers.md`. The scenario prompt adds one line asking for the 25,000 version to be
+kept as a named what-if. Fresh model runs vary; only the numbers are compared.
 
 ## Gaps this note does not close
 
+- **Codex was not run, so #16's second named harness is still open.** #16 asks for Claude Code
+  and Codex; Codex is installed here but not logged in (`codex login status` → `Not logged
+  in`; no `auth.json`, no `OPENAI_API_KEY`), and its login is a browser flow that no agent
+  thread can do. Pi was run instead — a substitution for the harness #16 names, not an
+  equivalent — so this ticket is not blocked, but its acceptance criterion for Codex is
+  **met by nothing yet**. It waits on the owner:
+  [infra#41](https://github.com/trajectonomics/infra/issues/41). When `codex exec` runs, its
+  pair of runs belongs in both tables above.
 - **`traj schema scenario apply` does not carry `sim-core`'s JSON Schema.** At the pinned
   `v0.1.0` tag the Scenario shape is public only in `src/fixtures/*.ts` and in `check()`'s
-  errors; `README.md` there does not describe it. The Spec's *Out of Scope* records the fix as
-  a `trajectonomics/cli` follow-up that this Spec **cannot file**, so it is recorded here and
-  in [#17](https://github.com/trajectonomics/internal-skills/issues/17) instead. The practical
-  effect: an agent can discover the top-level keys and then nested paths by trial, one
-  `MISSING_KEY` per dry run, and needs the pinned fixture source for the rest.
+  errors; that tag's `README.md` does not describe it. The Spec's *Out of Scope* records the
+  fix as a `trajectonomics/cli` follow-up that this Spec **cannot file**, so it is recorded
+  here and in [#17](https://github.com/trajectonomics/internal-skills/issues/17). The
+  practical effect: an agent discovers the top-level keys and then nested paths by trial, one
+  dry-run error at a time, and needs the pinned fixture source for the rest.
 - **Projection, FI and tax are absent from v0.1.0**, so the what-if's numbers and the
   retirement question have no answer in the tool. That is
   [trajectonomics/cli#11](https://github.com/trajectonomics/cli/issues/11), and the full run
   is [#17](https://github.com/trajectonomics/internal-skills/issues/17).
-- **Codex did not run.** #16 names Claude Code and Codex; Codex is installed on this host but
-  not logged in (`codex login status` → `Not logged in`; no `auth.json`, no
-  `OPENAI_API_KEY`), and its login is a browser flow that no agent thread can do. Pi was run
-  instead, so this ticket is not blocked — that is a substitution for the harness #16 names,
-  not an equivalent, and it is recorded rather than quietly swapped. The credential is filed
-  for the owner as [infra#41](https://github.com/trajectonomics/infra/issues/41); when
-  `codex exec` runs, its pair of runs belongs in both tables above.
+- **#15's post-merge check against GitHub** (`bash scripts/check-traj-install.sh
+  trajectonomics/internal-skills`) can only run after this merges, and its output belongs on
+  [#12](https://github.com/trajectonomics/internal-skills/issues/12) then.
 
 ## Verdict against ADR 0002
 
 **Partial, and the boundary is the CLI's, not the skill's.** v0.1.0 has no `projection`, no
 `fi` and no tax, so the what-if's *numbers* cannot come from the tool and the
 financial-independence question has no answer in it. For the part v0.1.0 does support —
-record, read, and hold a Scenario document — every harness builds a correct ledger from the
-conversation, answers both answerable questions correctly, and the skill carries the
-difference on the Scenario document.
+record, read, and hold a Scenario document — every harness run builds a correct ledger from
+the conversation and answers both answerable questions correctly, and one of the two harnesses
+needed the skill to get the Scenario amounts into minor units.
 
 The full run, with projection and FI on two harnesses, is
 [#17](https://github.com/trajectonomics/internal-skills/issues/17).

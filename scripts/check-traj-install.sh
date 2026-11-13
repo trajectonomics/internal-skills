@@ -26,13 +26,27 @@ fail() {
   exit 1
 }
 
+# A download that hangs must not hold a Factory Claim open. `timeout` is GNU/coreutils;
+# macOS only has it through `gtimeout`, and saying so is better than failing mysteriously.
+bounded() {
+  local limit="$1"
+  shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$limit" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$limit" "$@"
+  else
+    echo "warning: no timeout(1) or gtimeout(1) on PATH; running unbounded" >&2
+    "$@"
+  fi
+}
+
 echo "Installing only the traj skill from $SOURCE with $SKILLS_CLI..."
 mkdir -p "$SCRATCH/project"
 (
   cd "$SCRATCH/project"
   git init -q
-  # Bounded: a download that hangs must not hold a Factory Claim open.
-  timeout 600 npx -y "$SKILLS_CLI" add "$SOURCE" --skill traj -a claude-code codex -y \
+  bounded 600 npx -y "$SKILLS_CLI" add "$SOURCE" --skill traj -a claude-code codex -y \
     >"$SCRATCH/add.log" 2>&1
 ) || {
   cat "$SCRATCH/add.log" >&2
@@ -45,6 +59,8 @@ installed_in() {
   find "$dir" -mindepth 1 -maxdepth 1 -exec basename {} \; | sort
 }
 
+# The one rule the check exists for: `traj` and nothing else, in each directory the two agent
+# targets write to. An exact match also catches a Factory-only skill following the outsider in.
 for agents in ".agents/skills" ".claude/skills"; do
   found="$(installed_in "$SCRATCH/project/$agents")"
   if [ "$found" != "traj" ]; then
@@ -55,12 +71,6 @@ done
 
 [ -f "$SCRATCH/project/.agents/skills/traj/SKILL.md" ] ||
   fail "traj/SKILL.md was not installed"
-
-# The rule the check exists for: a Factory-only skill following the outsider through.
-for forbidden in pick-the-issue human-go human-decline human-postpone human-help; do
-  [ -e "$SCRATCH/project/.agents/skills/$forbidden" ] &&
-    fail "$forbidden was installed for an outsider"
-done
 
 echo "PASS: an outsider gets exactly the traj skill, and no Factory-only skill."
 echo "      Source: $SOURCE"

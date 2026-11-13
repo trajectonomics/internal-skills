@@ -8,6 +8,11 @@
 //   node scripts/check-traj-validation.mjs --traj "npx -y @trajectonomics/cli@latest"
 //   node scripts/check-traj-validation.mjs --fixture test/fixtures/traj/fixture.json
 //
+// Three modes. The default builds the ledger and checks everything.
+//   --verify <TRAJ_HOME>           judge a ledger an agent built: the net worth and the period result
+//   --verify-scenario <TRAJ_HOME>   judge the what-if an agent stored: amounts in minor units
+// Neither writes to the ledger it is given.
+//
 // Exit 0 all expectations met, 1 a mismatch, 2 the fixture or the CLI could not be used.
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -73,7 +78,7 @@ export function probe(binary) {
     maxBuffer: 1024 * 1024,
     timeout: 300_000,
   });
-  return { status: result.status, version: result.stdout.trim(), error: result.error };
+  return { status: result.status, error: result.error };
 }
 
 /** A JSON dump whose object keys are sorted, so a `{ name: amount }` map compares by content. */
@@ -287,7 +292,7 @@ export async function check(options = {}) {
     return notes;
   }
 
-  const verifyHome = options.verifyHome ?? options.verify;
+  const verifyHome = options.verify;
   if (verifyHome) {
     answerStep(trajBinary, fixture, verifyHome, notes);
     return notes;
@@ -306,10 +311,18 @@ export async function check(options = {}) {
     readStep(trajBinary, fixture, home, notes);
     scenarioStep(trajBinary, fixture, home, documentPath, notes);
     capabilityStep(trajBinary, fixture, home, notes);
+    // `keepHome` is the seam the test uses to judge a known-good home with the two
+    // --verify modes, which would otherwise have nothing to point at.
+    if (options.keepHome) return { notes, home, dispose: () => rm(home, { recursive: true, force: true }) };
     return notes;
   } finally {
-    await rm(home, { recursive: true, force: true });
+    if (!options.keepHome) await rm(home, { recursive: true, force: true });
   }
+}
+
+/** Run the CLI against a home, for a caller that needs to change one on purpose. */
+export function runTraj(binary, argv, home) {
+  return traj(binary, argv, { home });
 }
 
 const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

@@ -49,7 +49,7 @@ Omit `-y` to review the plan first. `scripts/check-traj-install.sh` proves the `
 
 ## Check the outsider install
 
-[`scripts/check-traj-install.sh`](scripts/check-traj-install.sh) is the reproduction script for the outsider path. In a scratch directory it runs the pinned `skills` CLI from [`lib/skill-profile.mjs`](lib/skill-profile.mjs) with `--skill traj -a claude-code codex -y`, then asserts that `traj` is the only skill installed and that no `pick-the-issue` or `human-*` skill followed it. It exits non-zero on either failure.
+[`scripts/check-traj-install.sh`](scripts/check-traj-install.sh) is the reproduction script for the outsider path: it runs the pinned `skills` CLI in a scratch directory and asserts that `traj` is the only skill in each agent directory the command targets. Its header says exactly what it asserts.
 
 ```bash
 # This checkout, as a local path

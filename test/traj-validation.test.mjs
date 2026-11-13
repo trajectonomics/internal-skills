@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { Mismatch, check, probe } from '../scripts/check-traj-validation.mjs';
+import { Mismatch, check, probe, runTraj } from '../scripts/check-traj-validation.mjs';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/traj/fixture.json', import.meta.url));
 
@@ -47,7 +47,7 @@ async function mutatedFixture(mutate, mutateScenario) {
 test('the fixture ledger meets every expectation', { skip }, async () => {
   const notes = await check({ traj: TRAJ });
 
-  assert.ok(notes.length >= 15, `expected the full protocol to run, got ${notes.length} checks`);
+  assert.equal(notes.length, 16, 'the protocol documents 16 expectations; a deleted one must fail here');
   assert.ok(
     notes.some((note) => note.startsWith('read: net worth')),
     'the read leg must compare net worth',
@@ -94,5 +94,50 @@ test('the checker fails on a Scenario document sim-core rejects', { skip }, asyn
     await assert.rejects(check({ traj: TRAJ, fixture: fixture.path }), /exited 2/);
   } finally {
     await fixture.remove();
+  }
+});
+
+test('--verify passes a ledger the protocol built and fails one it did not', { skip }, async () => {
+  const protocol = await check({ traj: TRAJ, keepHome: true });
+
+  try {
+    const judged = await check({ traj: TRAJ, verify: protocol.home });
+    assert.ok(judged.length >= 3, `expected the two answer checks plus the as-of echo, got ${judged.length}`);
+
+    // One extra salary moves the net worth and the period result, so the ledger no longer answers.
+    runTraj(
+      TRAJ,
+      ['tx', 'add', '--from', 'Income:Salary', '--to', 'Assets:Cash', '--amount', '1000.00', '--date', '2026-02-05'],
+      protocol.home,
+    );
+    await assert.rejects(check({ traj: TRAJ, verify: protocol.home }), Mismatch);
+  } finally {
+    await protocol.dispose();
+  }
+});
+
+test('--verify-scenario passes a stored what-if and fails one in the wrong unit', { skip }, async () => {
+  const protocol = await check({ traj: TRAJ, keepHome: true });
+
+  try {
+    const judged = await check({ traj: TRAJ, verifyScenario: protocol.home });
+    assert.equal(judged.length, 2, 'the scenario leg is two expectations: stored, and the right amount');
+
+    // What the Claude Code baseline produced: the same what-if in whole baht, which check() accepts.
+    const scenario = JSON.parse(await readFile(new URL('./fixtures/traj/scenario.json', import.meta.url), 'utf8'));
+    scenario.flows = scenario.flows.map((flow) =>
+      flow.id === 'savings' ? { ...flow, amount: flow.amount / 100 } : flow,
+    );
+    const directory = await mkdtemp(join(tmpdir(), 'traj-scenario-'));
+    const path = join(directory, 'whole-baht.json');
+    await writeFile(path, `${JSON.stringify(scenario, null, 2)}\n`);
+
+    runTraj(TRAJ, ['scenario', 'apply', 'whole-baht', '--file', path], protocol.home);
+    runTraj(TRAJ, ['scenario', 'rm', 'what-if-savings-25000'], protocol.home);
+
+    await assert.rejects(check({ traj: TRAJ, verifyScenario: protocol.home }), Mismatch);
+    await rm(directory, { recursive: true, force: true });
+  } finally {
+    await protocol.dispose();
   }
 });

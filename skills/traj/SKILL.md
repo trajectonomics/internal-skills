@@ -20,7 +20,7 @@ npx -y @trajectonomics/cli@latest <args>
 bunx @trajectonomics/cli@latest <args>
 ```
 
-The first npm run downloads about 100 MB of binary and narrates that download on stderr; a line about downloading is not an error. Resolve the version once, then pin it: put the number `traj --version` printed into the npm spec as `@<version>` and use that for every later call in the session.
+Either way, get the version once and pin it: the number from `traj --version`, or from `npx -y @trajectonomics/cli@latest --version` when you are on the fallback. Put that number into the npm spec as `@<version>` and use it for every later call, so one session cannot end up running two releases. The first npm run downloads about 100 MB of binary and narrates that download on stderr; a line about downloading is not an error.
 
 The npm package is `@trajectonomics/cli`; the unscoped package of the same short name belongs to someone else.
 

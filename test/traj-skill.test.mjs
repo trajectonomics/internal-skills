@@ -162,12 +162,13 @@ test('the traj skill covers the contract rules an agent must not guess', async (
     ['exitCode', 'errors arrive as an envelope whose exitCode names the class'],
     ['YYYY-MM-DD', 'dates are Gregorian ISO 8601, so a year must never be a Buddhist Era one'],
     ['TRAJ_HOME', 'the data directory is one path, overridden by TRAJ_HOME'],
-    ['never calls an LLM', 'the agent supplies the judgement, traj supplies the arithmetic'],
+    [/never calls an LLM|does not call an? LLM/i, 'the agent supplies the judgement, traj supplies the arithmetic'],
     ['sim-core', 'a Scenario document is sim-core\u2019s, not the CLI\u2019s'],
   ];
 
   for (const [needle, why] of rules) {
-    assert.ok(body.includes(needle), `the skill must mention \`${needle}\`: ${why}`);
+    const mentioned = typeof needle === 'string' ? body.includes(needle) : needle.test(body);
+    assert.ok(mentioned, `the skill must mention ${needle}: ${why}`);
   }
 });
 

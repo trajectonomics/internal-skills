@@ -26,6 +26,7 @@ function parseArgs(argv) {
     if (flag === '--traj' && value) options.traj = value;
     else if (flag === '--fixture' && value) options.fixture = value;
     else if (flag === '--verify' && value) options.verify = value;
+    else if (flag === '--verify-scenario' && value) options.verifyScenario = value;
     else throw new Error(`unknown argument: ${flag}`);
     index += 1;
   }
@@ -65,7 +66,7 @@ function traj(binary, argv, { home, expectExit = 0 } = {}) {
 }
 
 /** Whether the CLI can be started at all, which is the one thing a skip depends on. */
-function probe(binary) {
+export function probe(binary) {
   const [command, ...prefix] = binary.split(/\s+/).filter(Boolean);
   const result = spawnSync(command, [...prefix, '--version'], {
     encoding: 'utf8',
@@ -176,6 +177,29 @@ function answerStep(trajBinary, fixture, home, notes) {
   notes.push(same('answer: how January went', fixture.expected.pnl.total, totals(pnl.totals).join(', ')));
 }
 
+/**
+ * The scenario leg of a harness run: the what-if someone asked to keep has to be stored, and
+ * its amounts have to be integers of minor units. A document a hundred times too small passes
+ * sim-core's check(), so nothing but the number itself catches it.
+ */
+function scenarioVerifyStep(trajBinary, fixture, home, notes) {
+  const expected = fixture.expected.scenario.overrideTo;
+  const listed = traj(trajBinary, ['scenario', 'list'], { home });
+  notes.push(same('scenario: the what-if is stored as a Scenario', true, listed.scenarios.length > 0));
+
+  const amounts = listed.scenarios.flatMap((entry) => {
+    const document = traj(trajBinary, ['scenario', 'show', entry.name], { home }).scenario.document;
+    return (document.flows ?? []).map((flow) => flow.amount);
+  });
+  notes.push(
+    same(
+      `scenario: a stored flow holds ${expected} minor units, which is the amount asked for`,
+      true,
+      amounts.includes(expected),
+    ),
+  );
+}
+
 function readStep(trajBinary, fixture, home, notes) {
   const balance = traj(trajBinary, ['balance', '--as-of', fixture.expected.balanceAsOf], { home });
   notes.push(same('read: balance as-of echo', fixture.expected.balanceAsOf, balance.asOf));
@@ -257,6 +281,12 @@ export async function check(options = {}) {
   // `--verify <TRAJ_HOME>` judges a ledger some agent built from the same conversation, which
   // is the only way to measure a harness run. It reads and never writes, and it compares only
   // the figures the user asked for: an agent may name its accounts and shape its rows freely.
+  const verifyScenario = options.verifyScenario;
+  if (verifyScenario) {
+    scenarioVerifyStep(trajBinary, fixture, verifyScenario, notes);
+    return notes;
+  }
+
   const verifyHome = options.verifyHome ?? options.verify;
   if (verifyHome) {
     answerStep(trajBinary, fixture, verifyHome, notes);
@@ -291,7 +321,8 @@ if (invokedDirectly) {
     for (const note of notes) console.log(`ok  ${note}`);
     console.log(
       `\nPASS: ${notes.length} expectations met with ${options.traj}, fixture ${options.fixture}` +
-        (options.verify ? `, ledger ${options.verify}` : ''),
+        (options.verify ? `, ledger ${options.verify}` : '') +
+        (options.verifyScenario ? `, scenarios ${options.verifyScenario}` : ''),
     );
   } catch (error) {
     if (error instanceof Mismatch) {

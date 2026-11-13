@@ -4,7 +4,7 @@ Internal AI coding agent skills for the Trajectonomics ecosystem, managed via [s
 
 ## Available Skills
 
-- **`traj`**: Teaches an agent to operate [`traj`](https://github.com/trajectonomics/cli), the Trajectonomics ledger and projection CLI: find the CLI and run it without installing anything, read `traj schema` and `--help` instead of a memorised command list, keep every amount, date and account explicit, and never compute a number the CLI should. Model-invoked, so an agent loads it when someone talks about their money. Validated against cli ADR 0002 with [`scripts/check-traj-validation.mjs`](scripts/check-traj-validation.mjs); the dated result is [`docs/traj-skill-validation.md`](docs/traj-skill-validation.md).
+- **`traj`**: Teaches an agent to operate [`traj`](https://github.com/trajectonomics/cli), the Trajectonomics ledger and projection CLI: find the CLI and run it without installing anything, read `traj schema` and `--help` instead of a memorised command list, keep every amount, date and account explicit, and never compute a number the CLI should. Model-invoked, so an agent loads it when someone talks about their money. Partially validated against cli ADR 0002 — v0.1.0 has no projection or FI to test — with [`scripts/check-traj-validation.mjs`](scripts/check-traj-validation.mjs); the dated result and what is still untested are in [`docs/traj-skill-validation.md`](docs/traj-skill-validation.md).
 
 - **`pick-the-issue`**: Discovers open GitHub issues in the current repository only, filters out blocked issues and issues actively handled by existing T3 Code sessions, provides an executive summary, and routes the work through Matt Pocock's skills framework (`ask-matt`) to advise on the exact commands and workflow.
 

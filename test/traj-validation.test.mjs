@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { readFile, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { Mismatch, check } from '../scripts/check-traj-validation.mjs';
+import { Mismatch, check, probe } from '../scripts/check-traj-validation.mjs';
 
 const FIXTURE = fileURLToPath(new URL('./fixtures/traj/fixture.json', import.meta.url));
 
@@ -18,9 +17,7 @@ const FIXTURE = fileURLToPath(new URL('./fixtures/traj/fixture.json', import.met
 function findTraj() {
   for (const candidate of [process.env.TRAJ, 'traj']) {
     if (!candidate) continue;
-    const [command, ...prefix] = candidate.split(/\s+/);
-    const probe = spawnSync(command, [...prefix, '--version'], { encoding: 'utf8', timeout: 300_000 });
-    if (probe.status === 0) return candidate;
+    if (probe(candidate).status === 0) return candidate;
   }
   return null;
 }

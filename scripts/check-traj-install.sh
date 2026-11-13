@@ -31,10 +31,11 @@ mkdir -p "$SCRATCH/project"
 (
   cd "$SCRATCH/project"
   git init -q
-  npx -y "$SKILLS_CLI" add "$SOURCE" --skill traj -a claude-code codex -y \
+  # Bounded: a download that hangs must not hold a Factory Claim open.
+  timeout 600 npx -y "$SKILLS_CLI" add "$SOURCE" --skill traj -a claude-code codex -y \
     >"$SCRATCH/add.log" 2>&1
 ) || {
-  cat "$SCRATCH/add.log"
+  cat "$SCRATCH/add.log" >&2
   fail "skills add exited non-zero"
 }
 

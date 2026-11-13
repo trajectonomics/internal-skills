@@ -177,3 +177,10 @@ the pinned tag, runs `skills add repo@tag` and asserts it installed current
 `ref` to the lock. Run this script as well as `npm test` whenever `SKILLS_CLI`
 in `lib/skill-profile.mjs` is bumped. If current main cannot be fetched or still
 matches the pinned tag, the script exits 2 with a time-dependent explanation.
+
+Its companion is `bash scripts/check-traj-install.sh`, the same real-CLI style
+for the org's own `traj` skill: in a scratch directory it runs the pinned
+`skills add … --skill traj -a claude-code codex -y` and asserts that exactly
+`traj` landed, with no `pick-the-issue` or `human-*` skill. Pass
+`trajectonomics/internal-skills` as its argument to check the published form an
+outsider runs. Bump both scripts together with `SKILLS_CLI`.

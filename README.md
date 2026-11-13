@@ -4,6 +4,8 @@ Internal AI coding agent skills for the Trajectonomics ecosystem, managed via [s
 
 ## Available Skills
 
+- **`traj`**: Teaches an agent to operate [`traj`](https://github.com/trajectonomics/cli), the Trajectonomics ledger and projection CLI: find the CLI and run it without installing anything, read `traj schema` and `--help` instead of a memorised command list, keep every amount, date and account explicit, and never compute a number the CLI should. Model-invoked, so an agent loads it when someone talks about their money. Validated against cli ADR 0002 with [`scripts/check-traj-validation.mjs`](scripts/check-traj-validation.mjs); the dated result is [`docs/traj-skill-validation.md`](docs/traj-skill-validation.md).
+
 - **`pick-the-issue`**: Discovers open GitHub issues in the current repository only, filters out blocked issues and issues actively handled by existing T3 Code sessions, provides an executive summary, and routes the work through Matt Pocock's skills framework (`ask-matt`) to advise on the exact commands and workflow.
 
 - **`human-go`, `human-decline`, `human-postpone`, `human-help`**: The owner's words for Factory Ideas. The owner invokes them (`/human-go <repo>#<n>`) and the agent applies the labels. The rules live in `docs/next-steps-runbook.md` of `trajectonomics/factory`; the skills read them from there.
@@ -26,12 +28,35 @@ The Cloudflare skills are reference guidance only: they grant no authority, each
 
 ## Org-Specific Skills
 
-Install this repository's own skills, such as `pick-the-issue`, separately:
+Install this repository's own skills separately. To install **only** the `traj` skill, pass its name:
 
 ```bash
-# Add to the current repository
-npx skills add trajectonomics/internal-skills -y
+# Add just the traj skill to the current repository
+npx skills add trajectonomics/internal-skills --skill traj -y
 
 # Update to latest version
 npx skills update -p -y
 ```
+
+That is the outsider command: `traj` is public and anyone can install it this way. The bare command installs **every** skill in this repository, `pick-the-issue` and the Factory-only `human-*` skills included, which is what the organisation wants in a Factory repository and what someone outside it does not:
+
+```bash
+# Every skill in this repository — for a Factory repository, not for an outsider
+npx skills add trajectonomics/internal-skills -y
+```
+
+Omit `-y` to review the plan first. `scripts/check-traj-install.sh` proves the `--skill traj` form installs exactly one skill; see [the check](#check-the-outsider-install) below.
+
+## Check the outsider install
+
+[`scripts/check-traj-install.sh`](scripts/check-traj-install.sh) is the reproduction script for the outsider path. In a scratch directory it runs the pinned `skills` CLI from [`lib/skill-profile.mjs`](lib/skill-profile.mjs) with `--skill traj -a claude-code codex -y`, then asserts that `traj` is the only skill installed and that no `pick-the-issue` or `human-*` skill followed it. It exits non-zero on either failure.
+
+```bash
+# This checkout, as a local path
+bash scripts/check-traj-install.sh
+
+# After merge: the same check against GitHub, which is what an outsider actually runs
+bash scripts/check-traj-install.sh trajectonomics/internal-skills
+```
+
+It needs `npx` and network access. [`scripts/reproduce-cli-findings.sh`](scripts/reproduce-cli-findings.sh) does the same job for the profile's upstream pins.

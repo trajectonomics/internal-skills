@@ -1,0 +1,141 @@
+{
+  "name": "thai-employee-january-2026",
+  "note": "The conversation states a monthly schedule and an explicit recording window. The expected ledger holds every occurrence that lands on or before 2026-02-10: two opening rows, then rent and mortgage on the 5th, food on the 12th, salary on the 25th and savings on the 26th, in January and again on the 5th of February.",
+  "conversation": [
+    "I'm an employee in Bangkok and I want to start tracking my money properly. I'd rather have an agent do it than learn a new app.",
+    "On 1 January 2026 I had 800,000 baht in my current account, and 600,000 baht left on my mortgage.",
+    "My salary is 85,000 baht on the 25th of every month. Rent is 18,000 due on the 5th, and food is about 6,200 on the 12th.",
+    "I move 20,000 into savings on the 26th, and I pay 12,000 off the mortgage on the 5th.",
+    "Record everything that has happened up to 10 February 2026 for now.",
+    "What's my net worth on 10 February 2026? And how did January go?",
+    "What if I moved 25,000 into savings instead of 20,000?",
+    "And when can I stop working?"
+  ],
+  "setup": {
+    "accounts": [
+      { "name": "Assets:Cash", "type": "asset", "currency": "THB" },
+      { "name": "Assets:Savings", "type": "asset", "currency": "THB" },
+      { "name": "Liabilities:Mortgage", "type": "liability", "currency": "THB" },
+      { "name": "Income:Salary", "type": "income", "currency": "THB" },
+      { "name": "Expenses:Rent", "type": "expense", "currency": "THB" },
+      { "name": "Expenses:Food", "type": "expense", "currency": "THB" },
+      { "name": "Equity:Opening", "type": "equity", "currency": "THB" }
+    ],
+    "transactions": [
+      {
+        "opening": true,
+        "from": "Equity:Opening",
+        "to": "Assets:Cash",
+        "amount": "800000.00",
+        "date": "2026-01-01",
+        "memo": "Opening balance"
+      },
+      {
+        "opening": true,
+        "from": "Equity:Opening",
+        "to": "Liabilities:Mortgage",
+        "amount": "-600000.00",
+        "date": "2026-01-01",
+        "memo": "Opening mortgage"
+      },
+      {
+        "from": "Assets:Cash",
+        "to": "Expenses:Rent",
+        "amount": "18000.00",
+        "date": "2026-01-05",
+        "memo": "January rent",
+        "externalRef": "rent-2026-01"
+      },
+      {
+        "from": "Assets:Cash",
+        "to": "Liabilities:Mortgage",
+        "amount": "12000.00",
+        "date": "2026-01-05",
+        "memo": "January mortgage payment",
+        "externalRef": "mortgage-2026-01"
+      },
+      {
+        "from": "Assets:Cash",
+        "to": "Expenses:Food",
+        "amount": "6200.00",
+        "date": "2026-01-12",
+        "memo": "January food",
+        "externalRef": "food-2026-01"
+      },
+      {
+        "from": "Income:Salary",
+        "to": "Assets:Cash",
+        "amount": "85000.00",
+        "date": "2026-01-25",
+        "memo": "January salary",
+        "externalRef": "salary-2026-01"
+      },
+      {
+        "from": "Assets:Cash",
+        "to": "Assets:Savings",
+        "amount": "20000.00",
+        "date": "2026-01-26",
+        "memo": "January savings",
+        "externalRef": "savings-2026-01"
+      },
+      {
+        "from": "Assets:Cash",
+        "to": "Expenses:Rent",
+        "amount": "18000.00",
+        "date": "2026-02-05",
+        "memo": "February rent",
+        "externalRef": "rent-2026-02"
+      },
+      {
+        "from": "Assets:Cash",
+        "to": "Liabilities:Mortgage",
+        "amount": "12000.00",
+        "date": "2026-02-05",
+        "memo": "February mortgage payment",
+        "externalRef": "mortgage-2026-02"
+      }
+    ]
+  },
+  "expected": {
+    "transactionCount": 9,
+    "replayedExternalRef": { "status": "duplicate", "exitCode": 0 },
+    "balanceAsOf": "2026-02-10",
+    "netWorthAsOf": "2026-02-10",
+    "netWorth": "THB 242800.00",
+    "balances": {
+      "Assets:Cash": "798800.00",
+      "Assets:Savings": "20000.00",
+      "Liabilities:Mortgage": "-576000.00",
+      "Equity:Opening": "-200000.00",
+      "Income:Salary": "-85000.00",
+      "Expenses:Rent": "36000.00",
+      "Expenses:Food": "6200.00"
+    },
+    "netWorthRows": {
+      "Assets:Cash": "798800.00",
+      "Assets:Savings": "20000.00",
+      "Liabilities:Mortgage": "-576000.00"
+    },
+    "pnl": {
+      "since": "2026-01-01",
+      "until": "2026-01-31",
+      "rows": {
+        "Income:Salary": "-85000.00",
+        "Expenses:Rent": "18000.00",
+        "Expenses:Food": "6200.00"
+      },
+      "total": "THB 60800.00"
+    },
+    "scenario": {
+      "base": "plan",
+      "document": "scenario.json",
+      "dryRunStatus": "created",
+      "fork": "what-if-savings-25000",
+      "override": "flows.savings.amount=2500000",
+      "overridePath": "flows.savings.amount",
+      "overrideFrom": 2000000,
+      "overrideTo": 2500000
+    },
+    "missingCapabilities": ["projection", "fi"]
+  }
+}

@@ -13,13 +13,41 @@
   ],
   "setup": {
     "accounts": [
-      { "name": "Assets:Cash", "type": "asset", "currency": "THB" },
-      { "name": "Assets:Savings", "type": "asset", "currency": "THB" },
-      { "name": "Liabilities:Mortgage", "type": "liability", "currency": "THB" },
-      { "name": "Income:Salary", "type": "income", "currency": "THB" },
-      { "name": "Expenses:Rent", "type": "expense", "currency": "THB" },
-      { "name": "Expenses:Food", "type": "expense", "currency": "THB" },
-      { "name": "Equity:Opening", "type": "equity", "currency": "THB" }
+      {
+        "name": "Assets:Cash",
+        "type": "asset",
+        "currency": "THB"
+      },
+      {
+        "name": "Assets:Savings",
+        "type": "asset",
+        "currency": "THB"
+      },
+      {
+        "name": "Liabilities:Mortgage",
+        "type": "liability",
+        "currency": "THB"
+      },
+      {
+        "name": "Income:Salary",
+        "type": "income",
+        "currency": "THB"
+      },
+      {
+        "name": "Expenses:Rent",
+        "type": "expense",
+        "currency": "THB"
+      },
+      {
+        "name": "Expenses:Food",
+        "type": "expense",
+        "currency": "THB"
+      },
+      {
+        "name": "Equity:Opening",
+        "type": "equity",
+        "currency": "THB"
+      }
     ],
     "transactions": [
       {
@@ -98,7 +126,7 @@
   },
   "expected": {
     "transactionCount": 9,
-    "replayedExternalRef": { "status": "duplicate", "exitCode": 0 },
+    "replayedExternalRef": "duplicate",
     "balanceAsOf": "2026-02-10",
     "netWorthAsOf": "2026-02-10",
     "netWorth": "THB 242800.00",
@@ -136,6 +164,9 @@
       "overrideFrom": 2000000,
       "overrideTo": 2500000
     },
-    "missingCapabilities": ["projection", "fi"]
+    "missingCapabilities": [
+      "projection",
+      "fi"
+    ]
   }
 }

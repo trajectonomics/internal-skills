@@ -102,7 +102,7 @@ test('--verify passes a ledger the protocol built and fails one it did not', { s
 
   try {
     const judged = await check({ traj: TRAJ, verify: protocol.home });
-    assert.ok(judged.length >= 3, `expected the two answer checks plus the as-of echo, got ${judged.length}`);
+    assert.equal(judged.length, 3, 'the answer mode is three checks: the as-of echo, the net worth and the period');
 
     // One extra salary moves the net worth and the period result, so the ledger no longer answers.
     runTraj(

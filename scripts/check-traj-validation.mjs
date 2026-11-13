@@ -154,7 +154,7 @@ function recordStep(trajBinary, fixture, home, notes) {
   notes.push(
     same(
       'record: replaying an external reference is a duplicate at exit 0, not a second write',
-      fixture.expected.replayedExternalRef.status,
+      fixture.expected.replayedExternalRef,
       replay.status,
     ),
   );
@@ -165,20 +165,27 @@ function assertTransactionCount(trajBinary, fixture, home, notes) {
   notes.push(same('record: transaction count', fixture.expected.transactionCount, listed.transactions.length));
 }
 
+/** The two reads both judge modes start from, so neither repeats the other's calls. */
+function readFigures(trajBinary, fixture, home) {
+  return {
+    balance: traj(trajBinary, ['balance', '--as-of', fixture.expected.balanceAsOf], { home }),
+    pnl: traj(
+      trajBinary,
+      ['report', 'pnl', '--since', fixture.expected.pnl.since, '--until', fixture.expected.pnl.until],
+      { home },
+    ),
+  };
+}
+
 /**
- * What the user actually asked for, and what a harness run is judged on: two figures that do
- * not depend on the account names or the number of rows an agent chose.
+ * What the user actually asked for, and what a harness run is judged on: the as-of date the
+ * figure was read at, the net worth, and the period result. None of the three depends on the
+ * account names or the number of rows an agent chose.
  */
 function answerStep(trajBinary, fixture, home, notes) {
-  const balance = traj(trajBinary, ['balance', '--as-of', fixture.expected.balanceAsOf], { home });
+  const { balance, pnl } = readFigures(trajBinary, fixture, home);
   notes.push(same('answer: the net worth is read at the date asked for', fixture.expected.balanceAsOf, balance.asOf));
   notes.push(same('answer: net worth', fixture.expected.netWorth, totals(balance.netWorth).join(', ')));
-
-  const pnl = traj(
-    trajBinary,
-    ['report', 'pnl', '--since', fixture.expected.pnl.since, '--until', fixture.expected.pnl.until],
-    { home },
-  );
   notes.push(same('answer: how January went', fixture.expected.pnl.total, totals(pnl.totals).join(', ')));
 }
 
@@ -206,7 +213,7 @@ function scenarioVerifyStep(trajBinary, fixture, home, notes) {
 }
 
 function readStep(trajBinary, fixture, home, notes) {
-  const balance = traj(trajBinary, ['balance', '--as-of', fixture.expected.balanceAsOf], { home });
+  const { balance, pnl } = readFigures(trajBinary, fixture, home);
   notes.push(same('read: balance as-of echo', fixture.expected.balanceAsOf, balance.asOf));
   notes.push(same('read: balances', fixture.expected.balances, byAccount(balance.rows)));
   notes.push(same('read: net worth', fixture.expected.netWorth, totals(balance.netWorth).join(', ')));
@@ -214,12 +221,6 @@ function readStep(trajBinary, fixture, home, notes) {
   const netWorth = traj(trajBinary, ['report', 'networth', '--as-of', fixture.expected.netWorthAsOf], { home });
   notes.push(same('read: net worth rows', fixture.expected.netWorthRows, byAccount(netWorth.rows)));
   notes.push(same('read: net worth total', fixture.expected.netWorth, totals(netWorth.totals).join(', ')));
-
-  const pnl = traj(
-    trajBinary,
-    ['report', 'pnl', '--since', fixture.expected.pnl.since, '--until', fixture.expected.pnl.until],
-    { home },
-  );
   notes.push(same('read: pnl rows', fixture.expected.pnl.rows, byAccount(pnl.rows)));
   notes.push(same('read: pnl total', fixture.expected.pnl.total, totals(pnl.totals).join(', ')));
 }

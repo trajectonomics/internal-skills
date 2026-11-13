@@ -10,7 +10,9 @@ from a conversation and answers what-ifs correctly.* The owner's answer on the S
 the test to reach **the pinned `sim-core` public documentation and the `check()` error
 output** as well as the CLI's own `schema`, because the Scenario document's shape is
 `sim-core`'s ([cli ADR 0024](https://github.com/trajectonomics/cli/blob/main/docs/adr/0024-scenario-documents-and-overrides.md)).
-The skill's *Scenarios* paragraph is where an agent is told to use them.
+The skill's *Scenarios* paragraph is where an agent is told to use them: it says in the
+imperative to read the pinned documentation and to iterate against the `check()` errors, so
+the test's permission is spent there rather than restated as a fact about the test.
 
 The protocol has two halves, and only the second can show that the skill taught anything.
 
@@ -50,8 +52,9 @@ TRAJ="npx -y @trajectonomics/cli@latest" node scripts/check-traj-validation.mjs
 
 Two modes judge a ledger some *agent* built from the same conversation:
 
-- `--verify <TRAJ_HOME>` compares only the figures the user asked for, the net worth and the
-  period result. Account names and row shape are the agent's business; the numbers are not.
+- `--verify <TRAJ_HOME>` compares only what the user asked for: the as-of date the net worth
+  was read at, the net worth, and the period result. Account names and row shape are the
+  agent's business; those three are not.
 - `--verify-scenario <TRAJ_HOME>` requires the what-if to be stored as a Scenario whose flows
   hold the amount in **minor units**. `sim-core`'s `check()` accepts a document whose amounts
   are a hundred times too small, so only the number itself catches that mistake.
@@ -139,6 +142,7 @@ TRAJ_HOME="$PWD/home" npx -y @trajectonomics/cli@latest init
 # treatment only: npx skills add trajectonomics/internal-skills --skill traj -a claude-code -y
 claude -p "$(cat prompt.txt)" --dangerously-skip-permissions    # or: pi -p "$(cat prompt.txt)"
 TRAJ="npx -y @trajectonomics/cli@latest" node scripts/check-traj-validation.mjs --verify "$PWD/home"
+TRAJ="npx -y @trajectonomics/cli@latest" node scripts/check-traj-validation.mjs --verify-scenario "$PWD/home"
 ```
 
 `prompt.txt` is the conversation from `test/fixtures/traj/fixture.json` with this framing:
@@ -153,10 +157,11 @@ kept as a named what-if. Fresh model runs vary; only the numbers are compared.
   and Codex; Codex is installed here but not logged in (`codex login status` → `Not logged
   in`; no `auth.json`, no `OPENAI_API_KEY`), and its login is a browser flow that no agent
   thread can do. Pi was run instead — a substitution for the harness #16 names, not an
-  equivalent — so this ticket is not blocked, but its acceptance criterion for Codex is
-  **met by nothing yet**. It waits on the owner:
+  equivalent — so the ticket is partly done rather than blocked, and its acceptance criterion
+  for Codex is **met by nothing yet**. It waits on the owner:
   [infra#41](https://github.com/trajectonomics/infra/issues/41). When `codex exec` runs, its
-  pair of runs belongs in both tables above.
+  pair of runs belongs in both tables above. #16 therefore stays open after this merge rather
+  than closing on a criterion this note says is unmet.
 - **`traj schema scenario apply` does not carry `sim-core`'s JSON Schema.** At the pinned
   `v0.1.0` tag the Scenario shape is public only in `src/fixtures/*.ts` and in `check()`'s
   errors; that tag's `README.md` does not describe it. The Spec's *Out of Scope* records the
@@ -174,12 +179,13 @@ kept as a named what-if. Fresh model runs vary; only the numbers are compared.
 
 ## Verdict against ADR 0002
 
-**Partial, and the boundary is the CLI's, not the skill's.** v0.1.0 has no `projection`, no
-`fi` and no tax, so the what-if's *numbers* cannot come from the tool and the
-financial-independence question has no answer in it. For the part v0.1.0 does support —
+**Partial on three counts, and only one of them is the skill's.** v0.1.0 has no `projection`,
+no `fi` and no tax, so the what-if's *numbers* cannot come from the tool and the
+financial-independence question has no answer in it. Codex, the second harness #16 names, has
+not run, so that acceptance criterion is open on the owner. For the part v0.1.0 does support —
 record, read, and hold a Scenario document — every harness run builds a correct ledger from
-the conversation and answers both answerable questions correctly, and one of the two harnesses
-needed the skill to get the Scenario amounts into minor units.
+the conversation and answers both answerable questions correctly; one baseline put the
+Scenario amounts in whole baht, and the skill now states the unit so no run has to infer it.
 
 The full run, with projection and FI on two harnesses, is
 [#17](https://github.com/trajectonomics/internal-skills/issues/17).

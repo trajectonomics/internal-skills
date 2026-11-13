@@ -17,6 +17,8 @@ When choosing the next task, agents should not pick issues blindly or pick issue
 
 This skill inspects open issues in the current repository only, resolves dependency graphs, excludes in-flight T3 Code threads, and routes the winning issue into the right Matt Pocock engineering flow.
 
+The organisation's goals are in https://github.com/trajectonomics/goals, `GOALS.md`. Read them before proposing a new direction. Only the owner edits that file; never edit it.
+
 ## How to Run
 
 ### Option 1: Automated Script Execution (Fastest & Deterministic)

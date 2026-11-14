@@ -44,6 +44,25 @@ async function mutatedFixture(mutate, mutateScenario) {
   return { path, remove: () => rm(directory, { recursive: true, force: true }) };
 }
 
+
+/**
+ * A kept protocol home plus one scratch directory, both cleaned up even when the body throws.
+ * `mkdtemp` runs inside the outer `try` so a failure there cannot leak the protocol home.
+ */
+async function withScratch(name, body) {
+  const protocol = await check({ traj: TRAJ, keepHome: true });
+  try {
+    const directory = await mkdtemp(join(tmpdir(), name));
+    try {
+      await body({ home: protocol.home, directory });
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  } finally {
+    await protocol.dispose();
+  }
+}
+
 test('the fixture ledger meets every expectation', { skip }, async () => {
   const notes = await check({ traj: TRAJ });
 
@@ -125,36 +144,27 @@ test('--verify passes a ledger the protocol built and fails one it did not', { s
 });
 
 test('--verify-plan passes a stored plan and fails one that answers differently', { skip }, async () => {
-  const protocol = await check({ traj: TRAJ, keepHome: true });
-  const directory = await mkdtemp(join(tmpdir(), 'traj-plan-'));
-
-  try {
-    const judged = await check({ traj: TRAJ, verifyPlan: protocol.home });
+  await withScratch('traj-plan-', async ({ home, directory }) => {
+    const judged = await check({ traj: TRAJ, verifyPlan: home });
     assert.equal(judged.length, 2, 'the plan leg is two expectations: stored, and the FI date');
 
     // Replace the plan with one whose earned income never starts, so no FI date is reachable.
-    const stored = runTraj(TRAJ, ['scenario', 'show', 'plan'], protocol.home).scenario.document;
+    const stored = runTraj(TRAJ, ['scenario', 'show', 'plan'], home).scenario.document;
     stored.flows = stored.flows.map((flow) => (flow.kind === 'income' ? { ...flow, amount: 0 } : flow));
     const path = join(directory, 'broke.json');
     await writeFile(path, `${JSON.stringify(stored, null, 2)}\n`);
 
-    runTraj(TRAJ, ['scenario', 'rm', 'plan'], protocol.home);
-    runTraj(TRAJ, ['scenario', 'rm', 'what-if-savings-25000'], protocol.home);
-    runTraj(TRAJ, ['scenario', 'apply', 'broke', '--file', path], protocol.home);
+    runTraj(TRAJ, ['scenario', 'rm', 'plan'], home);
+    runTraj(TRAJ, ['scenario', 'rm', 'what-if-savings-25000'], home);
+    runTraj(TRAJ, ['scenario', 'apply', 'broke', '--file', path], home);
 
-    await assert.rejects(check({ traj: TRAJ, verifyPlan: protocol.home }), Mismatch);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-    await protocol.dispose();
-  }
+    await assert.rejects(check({ traj: TRAJ, verifyPlan: home }), Mismatch);
+  });
 });
 
 test('--verify-scenario passes a stored what-if and fails one in the wrong unit', { skip }, async () => {
-  const protocol = await check({ traj: TRAJ, keepHome: true });
-  const directory = await mkdtemp(join(tmpdir(), 'traj-scenario-'));
-
-  try {
-    const judged = await check({ traj: TRAJ, verifyScenario: protocol.home });
+  await withScratch('traj-scenario-', async ({ home, directory }) => {
+    const judged = await check({ traj: TRAJ, verifyScenario: home });
     assert.equal(judged.length, 2, 'the scenario leg is two expectations: stored, and the right amount');
 
     // What the Claude Code baseline produced: the same what-if in whole baht, which check() accepts.
@@ -165,12 +175,9 @@ test('--verify-scenario passes a stored what-if and fails one in the wrong unit'
     const path = join(directory, 'whole-baht.json');
     await writeFile(path, `${JSON.stringify(scenario, null, 2)}\n`);
 
-    runTraj(TRAJ, ['scenario', 'apply', 'whole-baht', '--file', path], protocol.home);
-    runTraj(TRAJ, ['scenario', 'rm', 'what-if-savings-25000'], protocol.home);
+    runTraj(TRAJ, ['scenario', 'apply', 'whole-baht', '--file', path], home);
+    runTraj(TRAJ, ['scenario', 'rm', 'what-if-savings-25000'], home);
 
-    await assert.rejects(check({ traj: TRAJ, verifyScenario: protocol.home }), Mismatch);
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-    await protocol.dispose();
-  }
+    await assert.rejects(check({ traj: TRAJ, verifyScenario: home }), Mismatch);
+  });
 });

@@ -275,6 +275,11 @@ checker is real: each mode passes a correct home and fails a wrong one.
 
 ### The harness half, 2026-11-14
 
+The Spec's *Validation* line named Claude Code and Codex. On 2026-11-14 the owner replaced the
+named harnesses with **"any two agent CLIs we already have"**, recorded on
+[#12](https://github.com/trajectonomics/internal-skills/issues/12) when #16 was closed, so this
+run applies that rule rather than the older names.
+
 Two harnesses ran, because **Claude Code 2.1.325 could not**: its weekly limit is used up
 ("resets Nov 16, 3pm (Asia/Bangkok)"). The two available CLIs were **Pi** with
 `deepseek-v4.1-flash` and the **Antigravity CLI** (`agy`) with `gemini-4-hydrogen-medium`.

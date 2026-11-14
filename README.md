@@ -10,6 +10,8 @@ Internal AI coding agent skills for the Trajectonomics ecosystem, managed via [s
 
 - **`human-go`, `human-decline`, `human-postpone`, `human-help`**: The owner's words for Factory Ideas. The owner invokes them (`/human-go <repo>#<n>`) and the agent applies the labels. The rules live in `docs/next-steps-runbook.md` of `trajectonomics/factory`; the skills read them from there.
 
+- **`introduce-new-sub`**: The ritual for adding a new sub (coding-agent harness + model) to the org: wire the provider into T3 Code on every linked machine, smoke-test it per environment, and record the harness in `fromsukong/infra`'s `AGENTS.md`. Owner-invoked: `/introduce-new-sub <harness> <model> [provider-instance-id]`. Distilled from the Grok 4.7 and Mistral Large 4 introductions.
+
 ## Curated Engineering Profile
 
 Factory repositories install a pinned set of upstream engineering skills (grilling, grill-with-docs, domain-modeling, to-spec, to-tickets, implement, implement-spec, tdd, code-review, pr, triage, diagnosing-bugs, retro) from [`mattpocock/skills`](https://github.com/mattpocock/skills), plus Cloudflare skills (cloudflare, cf-cli, wrangler, workers-best-practices, workers-development, cloudflare-email-service, durable-objects, cloudflare-one) from [`cloudflare/skills`](https://github.com/cloudflare/skills), with one command:

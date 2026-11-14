@@ -6,11 +6,12 @@ const SKILL_URL = new URL('../skills/traj/SKILL.md', import.meta.url);
 const README_URL = new URL('../README.md', import.meta.url);
 
 /**
- * The command surface of the released `traj` v0.1.0, taken from `traj schema --json`.
- * The skill must teach the agent to read the surface at run time, so a line that
- * opens with one of these paths and a flag is a copied command table that will go stale.
+ * The command surface of `traj` at the release this skill is validated against, taken from
+ * `traj schema --json` (v0.1.0 plus #11's projection and fi). The skill must teach the agent
+ * to read the surface at run time, so a line that opens with one of these paths and a flag is
+ * a copied command table that will go stale.
  */
-const TRAJ_V0_1_0_COMMANDS = [
+const TRAJ_COMMANDS = [
   'account add',
   'account close',
   'account list',
@@ -18,10 +19,13 @@ const TRAJ_V0_1_0_COMMANDS = [
   'balance',
   'baseline show',
   'export',
+  'fi',
   'help',
   'init',
   'inspect',
   'report networth',
+  'projection compare',
+  'projection run',
   'report pnl',
   'scenario apply',
   'scenario diff',
@@ -136,7 +140,7 @@ test('the traj skill never runs the unscoped traj package', async () => {
 
 test('the traj skill carries no copied command table', async () => {
   const { body } = frontmatter(await readFile(SKILL_URL, 'utf8'));
-  const copied = TRAJ_V0_1_0_COMMANDS.filter((command) => !DISCOVERY_COMMANDS.has(command)).map(
+  const copied = TRAJ_COMMANDS.filter((command) => !DISCOVERY_COMMANDS.has(command)).map(
     (command) =>
       new RegExp(
         String.raw`^traj\s+${command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+')}\s+--`,
@@ -164,6 +168,7 @@ test('the traj skill covers the contract rules an agent must not guess', async (
     ['TRAJ_HOME', 'the data directory is one path, overridden by TRAJ_HOME'],
     [/never calls an LLM|does not call an? LLM/i, 'the agent supplies the judgement, traj supplies the arithmetic'],
     ['sim-core', 'a Scenario document is sim-core\u2019s, not the CLI\u2019s'],
+    ['account ids', 'a Scenario declares the Ledger\u2019s own account ids, not names'],
   ];
 
   for (const [needle, why] of rules) {

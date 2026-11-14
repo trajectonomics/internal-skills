@@ -47,7 +47,7 @@ async function mutatedFixture(mutate, mutateScenario) {
 test('the fixture ledger meets every expectation', { skip }, async () => {
   const notes = await check({ traj: TRAJ });
 
-  assert.equal(notes.length, 16, 'the protocol documents 16 expectations; a deleted one must fail here');
+  assert.equal(notes.length, 31, 'the protocol documents 31 expectations; a deleted one must fail here');
   assert.ok(
     notes.some((note) => note.startsWith('read: net worth')),
     'the read leg must compare net worth',
@@ -55,6 +55,14 @@ test('the fixture ledger meets every expectation', { skip }, async () => {
   assert.ok(
     notes.some((note) => note.includes('flows.savings.amount')),
     'the scenario leg must compare the Override path',
+  );
+  assert.ok(
+    notes.some((note) => note.startsWith('plan: the FI date')),
+    'the plan leg must compare the FI answer',
+  );
+  assert.ok(
+    notes.some((note) => note.startsWith('plan: net worth at the horizon')),
+    'the plan leg must compare the projected net worth',
   );
 });
 
@@ -111,6 +119,31 @@ test('--verify passes a ledger the protocol built and fails one it did not', { s
       protocol.home,
     );
     await assert.rejects(check({ traj: TRAJ, verify: protocol.home }), Mismatch);
+  } finally {
+    await protocol.dispose();
+  }
+});
+
+test('--verify-plan passes a stored plan and fails one that answers differently', { skip }, async () => {
+  const protocol = await check({ traj: TRAJ, keepHome: true });
+
+  try {
+    const judged = await check({ traj: TRAJ, verifyPlan: protocol.home });
+    assert.equal(judged.length, 2, 'the plan leg is two expectations: stored, and the FI date');
+
+    // Replace the plan with one whose earned income never starts, so no FI date is reachable.
+    const stored = runTraj(TRAJ, ['scenario', 'show', 'plan'], protocol.home).scenario.document;
+    stored.flows = stored.flows.map((flow) => (flow.kind === 'income' ? { ...flow, amount: 0 } : flow));
+    const directory = await mkdtemp(join(tmpdir(), 'traj-plan-'));
+    const path = join(directory, 'broke.json');
+    await writeFile(path, `${JSON.stringify(stored, null, 2)}\n`);
+
+    runTraj(TRAJ, ['scenario', 'rm', 'plan'], protocol.home);
+    runTraj(TRAJ, ['scenario', 'rm', 'what-if-savings-25000'], protocol.home);
+    runTraj(TRAJ, ['scenario', 'apply', 'broke', '--file', path], protocol.home);
+
+    await assert.rejects(check({ traj: TRAJ, verifyPlan: protocol.home }), Mismatch);
+    await rm(directory, { recursive: true, force: true });
   } finally {
     await protocol.dispose();
   }

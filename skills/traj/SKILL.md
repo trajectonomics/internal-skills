@@ -68,12 +68,18 @@ A flag that carries a document takes a path or `-`. `-` is the only way to send 
 
 ## Scenarios
 
-A Scenario document's shape belongs to `sim-core`, not to the CLI. Read the validator name and pinned version that `traj schema scenario apply` prints, then that version's public documentation in `trajectonomics/sim-core` alongside the `check()` errors a dry run returns, and iterate the document against those errors. Never invent a field or carry a shape from memory. Its amounts are integers of minor units like every other amount in `traj`, and `check()` accepts a document whose amounts are a hundred times too small, so the unit is yours to get right. A fork whose `contentHash` equals its parent's holds no change: if you cannot express the user's what-if in the document, say so and do not present that fork as the what-if. An Override path is dotted object keys, with list items addressed by their stable `id`.
+A Scenario document's shape belongs to `sim-core`, not to the CLI. Read the validator name and pinned version that `traj schema scenario apply` prints, then that version's public documentation in `trajectonomics/sim-core` alongside the `check()` errors a dry run returns, and iterate the document against those errors. Never invent a field or carry a shape from memory. Its amounts are integers of minor units like every other amount in `traj`, and `check()` accepts a document whose amounts are a hundred times too small, so the unit is yours to get right. A Scenario's accounts declare the Ledger's own account ids — read them from the chart of accounts or the Baseline, never a name you made up — or the projection refuses the Baseline as undeclared. A fork whose `contentHash` equals its parent's holds no change: if you cannot express the user's what-if in the document, say so and do not present that fork as the what-if. An Override path is dotted object keys, with list items addressed by their stable `id`.
+
+## Plans and what-ifs
+
+A projection starts at an as-of date and ends at a horizon, and both are the user's to give. Ask for them when they are missing; never take either from the clock. The plan is the Scenario, so a what-if is an Override or a second Scenario, and the difference the tool reports is the answer — never a figure you worked out yourself.
+
+Report the financial-independence date together with the horizon and the assumptions it was computed under, because it is a property of that plan and that window, not of the person. The 25× figure that sits beside it is a labelled rule-of-thumb reference and is not the date. When a projection reports contributions it could not fund, or a date the plan runs out of money, say so plainly: the figures it gives are then not the plan the user described, and a what-if built on it is not the what-if either.
 
 ## What this version covers
 
 Phase 1 is record, project and answer. V1 is THB and Thailand; the United States follows later, and multi-currency does not.
 
-`traj schema` is the honest answer to "what can it do": read it before you promise anything. When a capability is absent — projections, FI, tax — say that this version of `traj` cannot answer it, offer the record-and-report part you can do, and leave the missing number missing rather than approximating it.
+`traj schema` is the honest answer to "what can it do": read it before you promise anything. When a capability is absent from it — tax, or projections and financial independence in an older release — say that this version of `traj` cannot answer it, offer the record-and-report part you can do, and leave the missing number missing rather than approximating it.
 
-Every result you give the user states the as-of date it was read at, and whether tax is in it. A figure without those two is one they will misread.
+Every result you give the user states the as-of date it was read at, and whether tax is in it. A figure without those two is one they will misread. Until a tax core is wired in, every `traj` result says tax is not applied, so a figure is pre-tax unless the user asked you to account for tax some other way.

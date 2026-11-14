@@ -1,15 +1,16 @@
 {
   "name": "thai-employee-january-2026",
-  "note": "The conversation states a monthly schedule and an explicit recording window. The expected ledger holds every occurrence that lands on or before 2026-02-10: two opening rows, then rent and mortgage on the 5th, food on the 12th, salary on the 25th and savings on the 26th, in January and again on the 5th of February.",
+  "note": "The conversation states a monthly schedule and an explicit recording window. The expected ledger holds every occurrence that lands on or before 2026-02-10: two opening rows, then rent and mortgage on the 5th, food on the 12th, salary on the 25th and savings on the 26th, in January and again on the 5th of February. The planning paragraph (no interest, no inflation, ten years to 2036-02-10) is what makes the projection and FI answers arithmetic rather than a guess.",
   "conversation": [
     "I'm an employee in Bangkok and I want to start tracking my money properly. I'd rather have an agent do it than learn a new app.",
     "On 1 January 2026 I had 800,000 baht in my current account, and 600,000 baht left on my mortgage.",
     "My salary is 85,000 baht on the 25th of every month. Rent is 18,000 due on the 5th, and food is about 6,200 on the 12th.",
     "I move 20,000 into savings on the 26th, and I pay 12,000 off the mortgage on the 5th.",
     "Record everything that has happened up to 10 February 2026 for now.",
+    "For planning, assume nothing earns interest, the mortgage charges no interest, and prices don't change. Look ten years ahead, to 10 February 2036.",
     "What's my net worth on 10 February 2026? And how did January go?",
-    "What if I moved 25,000 into savings instead of 20,000?",
-    "And when can I stop working?"
+    "What if I moved 25,000 into savings instead of 20,000, with the extra 5,000 coming out of my current account?",
+    "And with that plan, when can I stop working?"
   ],
   "setup": {
     "accounts": [
@@ -162,11 +163,32 @@
       "override": "flows.savings.amount=2500000",
       "overridePath": "flows.savings.amount",
       "overrideFrom": 2000000,
-      "overrideTo": 2500000
+      "overrideTo": 2500000,
+      "accounts": {
+        "cash": "Assets:Cash",
+        "savings": "Assets:Savings",
+        "mortgage": "Liabilities:Mortgage"
+      }
     },
-    "missingCapabilities": [
-      "projection",
-      "fi"
-    ]
+    "plan": {
+      "asOf": "2026-02-10",
+      "horizon": "2036-02-10",
+      "annualRows": 11,
+      "firstYear": {
+        "closingNetWorth": "THB 972400.00",
+        "income": "THB 1020000.00",
+        "expense": "THB 290400.00"
+      },
+      "finalNetWorth": "THB 7538800.00",
+      "runsOut": null,
+      "tax": "not_applied",
+      "method": "survival",
+      "fiDate": "2028-10-01",
+      "whatIf": {
+        "override": "flows.savings.amount=2500000",
+        "fiMonthsDelta": 0,
+        "netWorthDelta": "0.00"
+      }
+    }
   }
 }

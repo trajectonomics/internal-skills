@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "currency": "THB",
+  "economy": { "inflation": 250 },
+  "accounts": [
+    { "id": "cash", "kind": "asset", "rate": 50 },
+    { "id": "savings", "kind": "asset", "rate": 150 },
+    { "id": "mortgage", "kind": "liability", "rate": 450 }
+  ],
+  "flows": [
+    { "id": "salary", "kind": "income", "earned": true, "amount": 8500000, "frequency": "monthly", "start": "2026-01-25", "growth": { "bps": 300 } },
+    { "id": "rent", "kind": "expense", "amount": 1800000, "frequency": "monthly", "start": "2026-01-05", "growth": "inflation" },
+    { "id": "food", "kind": "expense", "amount": 620000, "frequency": "monthly", "start": "2026-01-12", "growth": "inflation" },
+    { "id": "savings", "kind": "contribution", "target": "savings", "amount": 2000000, "frequency": "monthly", "start": "2026-01-26", "growth": { "bps": 0 } },
+    { "id": "mortgage-payment", "kind": "contribution", "target": "mortgage", "amount": 1200000, "frequency": "monthly", "start": "2026-02-05", "growth": { "bps": 0 } }
+  ],
+  "cashflow": {
+    "surplus": [{ "account": "cash", "upTo": 10000000 }, { "account": "savings" }],
+    "withdraw": ["savings", "cash"]
+  }
+}

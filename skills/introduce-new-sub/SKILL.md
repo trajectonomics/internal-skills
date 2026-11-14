@@ -36,6 +36,15 @@ In `fromsukong/infra` (the live production config repo):
 2. Add a harness-specific rules file **only if the harness has its own config dir** — Cursor: `.cursor/rules/infra-agent.mdc` with frontmatter (`description`, `alwaysApply: true`) restating the AGENTS.md contract. Harnesses without one (Mistral Vibe, Claude, Pi, …) read `AGENTS.md` itself; do not invent a file for them.
 3. Branch (`docs/*` or `feat/*`), commit, push, open a PR. Never push to `main` directly.
 
-## 5. Announce in the thread
+## 5. Make the harness's skills discovery work in every repo
 
-Post a summary table — host, version/binary, auth state, smoke-test result with thread link — plus the caveats worth knowing: `binaryPath` staleness through version symlinks, plan/budget coverage of the model (check the provider's billing endpoint; included budget first, pay-as-you-go off means hard stop at reset), and the `hiddenModels` semantics from step 3.
+Project skills only load from a **trusted** project root, and ACP/programmatic sessions never prompt for trust — so both layers must be set up explicitly:
+
+1. **Host trust store, per machine.** Seed the harness's trust file with the project roots (back up first, `chmod 600`):
+   - Mistral Vibe: `~/.vibe/trusted_folders.toml` → `trusted = ["/project", "/home/prame_assistant/project"]` on homeserver2, `trusted = ["/home/prame/project"]` on homeserver1 (prameubuntu when reachable). Vibe then discovers `.vibe/skills` and `.agents/skills` in every repo under those roots.
+   - Pi: `~/.pi/agent/trust.json` → `"/project": true` (nearest-ancestor match).
+2. **Repo skills dir, per repo.** Give the harness its own committed skills dir so the skills CLI maintains it: for Vibe, `.vibe/skills/<name> -> ../../.agents/skills/<name>` symlinks (the `mistral-vibe` agent target of `skills` uses `.vibe/skills`), mirroring the committed `.claude/skills` symlinks. Branch (`chore/*`), commit, push, one PR per repo.
+
+## 6. Announce in the thread
+
+Post a summary table — host, version/binary, auth state, smoke-test result with thread link — plus the caveats worth knowing: `binaryPath` staleness through version symlinks, plan/budget coverage of the model (check the provider's billing endpoint; included budget first, pay-as-you-go off means hard stop at reset), the `hiddenModels` semantics from step 3, and the trust/skills-discovery state from step 5.

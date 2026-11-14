@@ -82,9 +82,10 @@ named what-if**.
 | --- | --- | --- |
 | Claude Code 2.1.323 | 242,800.00 and 60,800.00 — **correct**; 8 rows, one 3-posting opening | 242,800.00 and 60,800.00 — **correct**; 8 rows with an external reference on each write; kept the what-if in a separate scratch ledger |
 | Pi, `deepseek-v4.1-flash` | 242,800.00 and 60,800.00 — **correct**; 9 rows | 242,800.00 and 60,800.00 — **correct**; 8 rows |
+| Antigravity CLI (`agy`), `gemini-4-hydrogen-medium` | 242,800.00 and 60,800.00 — **correct** | 242,800.00 and 60,800.00 — **correct**; stated the as-of date and "excluding tax" on each figure |
 
-All four ledgers pass `--verify`, and both baselines also got the cross-account arithmetic of
-the what-if right. All four declined the financial-independence date with a reason.
+All six ledgers pass `--verify`, and both Claude Code and Pi baselines also got the cross-account
+arithmetic of the what-if right. All six declined the financial-independence date with a reason.
 
 ### Scenario
 
@@ -92,6 +93,7 @@ the what-if right. All four declined the financial-independence date with a reas
 | --- | --- | --- |
 | Claude Code 2.1.323 | stored `base` and a fork `save-25k` whose flows are **whole baht** (`85000`) — `--verify-scenario` fails | stored `base-20k` and a fork `savings-25k` in **minor units** (`8500000`) — passes |
 | Pi, `deepseek-v4.1-flash` | `base-20k` and `save-25k`, **minor units**, passes | `plan-20000` and `savings-25000`, **minor units**, passes |
+| Antigravity CLI (`agy`), `gemini-4-hydrogen-medium` | `base` and `save-25000`, **minor units**, but the change is a cap on `cashflow.surplus` (`2500000`) rather than the savings flow — `--verify-scenario` fails | `base` and `savings-25k` whose content hash **equals `base`**: the fork holds no change, because the agent did not find a flow kind for a transfer into savings and said so in its answer — `--verify-scenario` fails |
 
 So the whole-baht document is **model-dependent, not skill-caused**: one baseline produced it
 and the other did not. It is still the sharpest failure these runs found — the document is
@@ -99,6 +101,16 @@ schema-valid, the fork reports the change, and every number in it is a hundred t
 small — and the skill now states the unit in its *Scenarios* paragraph instead of leaving it
 to be inferred from the ledger rules. That removes the inference; it does not prove the
 inference was the cause.
+
+The Antigravity runs are the first to fail the Scenario half *with* the skill. Both failures are
+the same problem the Spec already recorded: an agent finds the Scenario document's top-level
+keys but not the flow kind for money moved into an account (`contribution`) from `schema`
+alone, and iterating on `check()` errors does not reveal it either. The baseline guessed a
+different model (a surplus cap); the treatment gave up and stored a fork identical to its
+parent, then wrote "named what-if saved" next to a fork that changes nothing. The first is a
+`traj schema scenario apply` gap (the cli follow-up below). The second is a skill gap, and the
+*Scenarios* paragraph now says a fork whose `contentHash` equals its parent's holds no change
+and must be reported as such, not as the what-if.
 
 ### What the skill added
 
@@ -142,6 +154,7 @@ arm, in a new directory with its own empty `TRAJ_HOME`:
 TRAJ_HOME="$PWD/home" npx -y @trajectonomics/cli@latest init
 # treatment only: npx skills add trajectonomics/internal-skills --skill traj -a claude-code -y
 claude -p "$(cat prompt.txt)" --dangerously-skip-permissions    # or: pi -p "$(cat prompt.txt)"
+# or: agy --model gemini-4-hydrogen-medium --dangerously-skip-permissions -p "$(cat prompt.txt)" (treatment: -a antigravity-cli)
 TRAJ="npx -y @trajectonomics/cli@latest" node scripts/check-traj-validation.mjs --verify "$PWD/home"
 TRAJ="npx -y @trajectonomics/cli@latest" node scripts/check-traj-validation.mjs --verify-scenario "$PWD/home"
 ```
@@ -154,15 +167,11 @@ kept as a named what-if. Fresh model runs vary; only the numbers are compared.
 
 ## Gaps this note does not close
 
-- **Codex was not run, so #16's second named harness is still open.** #16 asks for Claude Code
-  and Codex; Codex is installed here but not logged in (`codex login status` → `Not logged
-  in`; no `auth.json`, no `OPENAI_API_KEY`), and its login is a browser flow that no agent
-  thread can do. Pi was run instead — a substitution for the harness #16 names, not an
-  equivalent — so the ticket is partly done rather than blocked, and its acceptance criterion
-  for Codex is **met by nothing yet**. It waits on the owner:
-  [infra#41](https://github.com/trajectonomics/infra/issues/41). When `codex exec` runs, its
-  pair of runs belongs in both tables above. #16 therefore stays open after this merge rather
-  than closing on a criterion this note says is unmet.
+- **Codex was not run, by the owner's decision.** #16 named Claude Code and Codex; on
+  2026-11-14 the owner replaced that with "any two agent CLIs we already have". Three ran
+  (Claude Code, Pi, Antigravity CLI), so the criterion is met without Codex, and infra#41
+  (a Codex login) is not needed for this ticket. One run per harness and arm still cannot
+  separate the model's choice from the skill's effect, and this note does not claim to.
 - **`traj schema scenario apply` does not carry `sim-core`'s JSON Schema.** At the pinned
   `v0.1.0` tag the Scenario shape is public only in `src/fixtures/*.ts` and in `check()`'s
   errors; that tag's `README.md` does not describe it. The Spec's *Out of Scope* records the
@@ -180,13 +189,14 @@ kept as a named what-if. Fresh model runs vary; only the numbers are compared.
 
 ## Verdict against ADR 0002
 
-**Partial on three counts, and only one of them is the skill's.** They are: v0.1.0 has no
-`projection`, no `fi` and no tax, so the what-if's *numbers* cannot come from the tool and the
-financial-independence question has no answer in it; Codex, the second harness #16 names, has
-not run, so that acceptance criterion is open on the owner; and one harness run put a
-Scenario document's amounts in whole baht instead of minor units. For the part v0.1.0 does
-support — record, read, and hold a Scenario document — every harness run builds a correct
-ledger from the conversation and answers both answerable questions correctly, and the skill
+**Partial on three counts.** They are: v0.1.0 has no `projection`, no `fi` and no tax, so the
+what-if's *numbers* cannot come from the tool and the financial-independence question has no
+answer in it; one Claude Code baseline put a Scenario document's amounts in whole baht
+instead of minor units; and both Antigravity runs failed to store the what-if the way the
+fixture does, because the flow kind for money moved into an account is not discoverable from
+`schema`. For the part v0.1.0
+supports best — record and read — all six harness runs build a correct ledger from the
+conversation and answer both answerable questions correctly, and the skill
 now states the Scenario unit so no run has to infer it. One run per harness cannot show
 whether that unit mistake came from the skill's absence or from the model's own choice, so
 this note does not claim it did.

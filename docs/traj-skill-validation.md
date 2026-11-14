@@ -127,7 +127,8 @@ Three things, all found by running the protocol rather than reasoning about it:
 2. The first draft's `--verify` mode counted transactions and compared balances by account
    name. Claude Code recorded the two opening balances as one multi-posting row and named its
    accounts freely; the books were identical. Counting rows tests a recording style, not the
-   answer, so `--verify` now compares only the net worth and the period result.
+   answer, so `--verify` now compares the as-of echo, the net worth and the period result, and
+   nothing that depends on how the agent named its accounts.
 3. The Scenario unit, above. That is the only change to `skills/traj/SKILL.md` these runs
    produced.
 
@@ -179,13 +180,16 @@ kept as a named what-if. Fresh model runs vary; only the numbers are compared.
 
 ## Verdict against ADR 0002
 
-**Partial on three counts, and only one of them is the skill's.** v0.1.0 has no `projection`,
-no `fi` and no tax, so the what-if's *numbers* cannot come from the tool and the
-financial-independence question has no answer in it. Codex, the second harness #16 names, has
-not run, so that acceptance criterion is open on the owner. For the part v0.1.0 does support —
-record, read, and hold a Scenario document — every harness run builds a correct ledger from
-the conversation and answers both answerable questions correctly; one baseline put the
-Scenario amounts in whole baht, and the skill now states the unit so no run has to infer it.
+**Partial on three counts, and only one of them is the skill's.** They are: v0.1.0 has no
+`projection`, no `fi` and no tax, so the what-if's *numbers* cannot come from the tool and the
+financial-independence question has no answer in it; Codex, the second harness #16 names, has
+not run, so that acceptance criterion is open on the owner; and one harness run put a
+Scenario document's amounts in whole baht instead of minor units. For the part v0.1.0 does
+support — record, read, and hold a Scenario document — every harness run builds a correct
+ledger from the conversation and answers both answerable questions correctly, and the skill
+now states the Scenario unit so no run has to infer it. One run per harness cannot show
+whether that unit mistake came from the skill's absence or from the model's own choice, so
+this note does not claim it did.
 
 The full run, with projection and FI on two harnesses, is
 [#17](https://github.com/trajectonomics/internal-skills/issues/17).

@@ -9,7 +9,7 @@
 //   node scripts/check-traj-validation.mjs --fixture test/fixtures/traj/fixture.json
 //
 // Three modes. The default builds the ledger and checks everything.
-//   --verify <TRAJ_HOME>           judge a ledger an agent built: the net worth and the period result
+//   --verify <TRAJ_HOME>           judge a ledger an agent built: the as-of echo, the net worth, the period result
 //   --verify-scenario <TRAJ_HOME>   judge the what-if an agent stored: amounts in minor units
 // Neither writes to the ledger it is given.
 //

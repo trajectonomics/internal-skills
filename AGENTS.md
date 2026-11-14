@@ -22,6 +22,10 @@ The organisation's goals are in https://github.com/trajectonomics/goals, `GOALS.
 - Record durable lessons in repo instructions rather than agent memory.
 - Settle your own T3 thread (`t3_thread_organize`, `action: "settle"`) when done and nothing waits on the owner.
 
+## Agent skills
+
+The canonical copy of the skills is `.agents/skills/`, and `.vibe/skills/` holds one symlink per skill into it (`<name> -> ../../.agents/skills/<name>`) so Mistral Vibe discovers the same skills as the other agents; add the symlink for any new skill.
+
 ## Factory Runs
 
 A Factory Run or Spec drafter (a thread titled `traj/trajectonomics/<repo>#<n>` or `triage/trajectonomics/<repo>#<n>`) takes its instructions from the Dispatcher runbook in `trajectonomics/factory`, never from this repository, where `docs/dispatcher-runbook.md` does not exist. Read it with `gh api repos/trajectonomics/factory/contents/docs/dispatcher-runbook.md -H "Accept: application/vnd.github.raw"`. If you cannot read it, stop and say so; do not build from the issue alone.

@@ -68,7 +68,7 @@ A flag that carries a document takes a path or `-`. `-` is the only way to send 
 
 ## Scenarios
 
-A Scenario document's shape belongs to `sim-core`, not to the CLI. Read the validator name and pinned version that `traj schema scenario apply` prints, then that version's public documentation in `trajectonomics/sim-core` alongside the `check()` errors a dry run returns, and iterate the document against those errors. Never invent a field or carry a shape from memory. Its amounts are integers of minor units like every other amount in `traj`, and `check()` accepts a document whose amounts are a hundred times too small, so the unit is yours to get right. An Override path is dotted object keys, with list items addressed by their stable `id`.
+A Scenario document's shape belongs to `sim-core`, not to the CLI. Read the validator name and pinned version that `traj schema scenario apply` prints, then that version's public documentation in `trajectonomics/sim-core` alongside the `check()` errors a dry run returns, and iterate the document against those errors. Never invent a field or carry a shape from memory. Its amounts are integers of minor units like every other amount in `traj`, and `check()` accepts a document whose amounts are a hundred times too small, so the unit is yours to get right. A fork whose `contentHash` equals its parent's holds no change: if you cannot express the user's what-if in the document, say so and do not present that fork as the what-if. An Override path is dotted object keys, with list items addressed by their stable `id`.
 
 ## What this version covers
 

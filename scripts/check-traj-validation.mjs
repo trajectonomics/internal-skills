@@ -110,13 +110,13 @@ function byAccount(rows, key = 'account') {
   return Object.fromEntries(rows.map((row) => [row[key].name, row.amount]));
 }
 
-function totals(rows) {
-  return rows.map((row) => `${row.currency} ${row.amount}`);
-}
-
 /** One rendered amount, in the form the CLI prints it. */
 function money(currency, amount) {
   return `${currency} ${amount}`;
+}
+
+function totals(rows) {
+  return rows.map((row) => money(row.currency, row.amount));
 }
 
 /**

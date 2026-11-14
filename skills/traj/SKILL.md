@@ -82,4 +82,4 @@ Phase 1 is record, project and answer. V1 is THB and Thailand; the United States
 
 `traj schema` is the honest answer to "what can it do": read it before you promise anything. When a capability is absent from it — tax, or projections and financial independence in an older release — say that this version of `traj` cannot answer it, offer the record-and-report part you can do, and leave the missing number missing rather than approximating it.
 
-Every result you give the user states the as-of date it was read at, and whether tax is in it. A figure without those two is one they will misread. Until a tax core is wired in, every `traj` result says tax is not applied, so a figure is pre-tax unless the user asked you to account for tax some other way.
+Every result you give the user states the as-of date it was read at, and whether tax is in it. A figure without those two is one they will misread. Until a tax core is wired in, every `traj` result says tax is not applied: a figure is pre-tax, and you never estimate the tax yourself — say it is not included and let the user decide what to do about it.

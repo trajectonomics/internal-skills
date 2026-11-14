@@ -23,9 +23,9 @@ const TRAJ_COMMANDS = [
   'help',
   'init',
   'inspect',
-  'report networth',
   'projection compare',
   'projection run',
+  'report networth',
   'report pnl',
   'scenario apply',
   'scenario diff',
@@ -155,7 +155,7 @@ test('the traj skill carries no copied command table', async () => {
   assert.deepEqual(
     offenders,
     [],
-    `these lines copy a v0.1.0 command invocation and will go stale; read it from \`traj schema\` instead:\n${offenders.join('\n')}`,
+    `these lines copy a command invocation and will go stale; read it from \`traj schema\` instead:\n${offenders.join('\n')}`,
   );
 });
 

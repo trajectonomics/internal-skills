@@ -220,7 +220,7 @@ The full run, with projection and FI on two harnesses, is
 
 ---
 
-# Full ADR 0002 run, 2026-11-14
+## Full ADR 0002 run, 2026-11-14
 
 The run [#17](https://github.com/trajectonomics/internal-skills/issues/17) calls for, after
 [trajectonomics/cli#11](https://github.com/trajectonomics/cli/issues/11) merged
@@ -273,7 +273,7 @@ the fixture's horizon on the Scenarios an agent stored and requires the expected
 invariant to account naming because the conversation pins the assumptions. `npm test` shows the
 checker is real: each mode passes a correct home and fails a wrong one.
 
-## The harness half
+### The harness half, 2026-11-14
 
 Two harnesses ran, because **Claude Code 2.1.325 could not**: its weekly limit is used up
 ("resets Nov 16, 3pm (Asia/Bangkok)"). The two available CLIs were **Pi** with
@@ -295,7 +295,7 @@ prepared with `traj init`, and no network beyond the tool.
 So the full cli ADR 0002 test **passes on both harnesses**, with the baseline recorded beside
 the treatment.
 
-### What the skill added
+### What the skill added in this run
 
 Not arithmetic. Both baselines reached the correct numbers from the CLI's own `schema` and
 `help`, and both used `fi` and `projection compare` correctly. What the treatment runs did

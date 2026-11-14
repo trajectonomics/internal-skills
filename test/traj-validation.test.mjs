@@ -126,6 +126,7 @@ test('--verify passes a ledger the protocol built and fails one it did not', { s
 
 test('--verify-plan passes a stored plan and fails one that answers differently', { skip }, async () => {
   const protocol = await check({ traj: TRAJ, keepHome: true });
+  const directory = await mkdtemp(join(tmpdir(), 'traj-plan-'));
 
   try {
     const judged = await check({ traj: TRAJ, verifyPlan: protocol.home });
@@ -134,7 +135,6 @@ test('--verify-plan passes a stored plan and fails one that answers differently'
     // Replace the plan with one whose earned income never starts, so no FI date is reachable.
     const stored = runTraj(TRAJ, ['scenario', 'show', 'plan'], protocol.home).scenario.document;
     stored.flows = stored.flows.map((flow) => (flow.kind === 'income' ? { ...flow, amount: 0 } : flow));
-    const directory = await mkdtemp(join(tmpdir(), 'traj-plan-'));
     const path = join(directory, 'broke.json');
     await writeFile(path, `${JSON.stringify(stored, null, 2)}\n`);
 
@@ -143,14 +143,15 @@ test('--verify-plan passes a stored plan and fails one that answers differently'
     runTraj(TRAJ, ['scenario', 'apply', 'broke', '--file', path], protocol.home);
 
     await assert.rejects(check({ traj: TRAJ, verifyPlan: protocol.home }), Mismatch);
-    await rm(directory, { recursive: true, force: true });
   } finally {
+    await rm(directory, { recursive: true, force: true });
     await protocol.dispose();
   }
 });
 
 test('--verify-scenario passes a stored what-if and fails one in the wrong unit', { skip }, async () => {
   const protocol = await check({ traj: TRAJ, keepHome: true });
+  const directory = await mkdtemp(join(tmpdir(), 'traj-scenario-'));
 
   try {
     const judged = await check({ traj: TRAJ, verifyScenario: protocol.home });
@@ -161,7 +162,6 @@ test('--verify-scenario passes a stored what-if and fails one in the wrong unit'
     scenario.flows = scenario.flows.map((flow) =>
       flow.id === 'savings' ? { ...flow, amount: flow.amount / 100 } : flow,
     );
-    const directory = await mkdtemp(join(tmpdir(), 'traj-scenario-'));
     const path = join(directory, 'whole-baht.json');
     await writeFile(path, `${JSON.stringify(scenario, null, 2)}\n`);
 
@@ -169,8 +169,8 @@ test('--verify-scenario passes a stored what-if and fails one in the wrong unit'
     runTraj(TRAJ, ['scenario', 'rm', 'what-if-savings-25000'], protocol.home);
 
     await assert.rejects(check({ traj: TRAJ, verifyScenario: protocol.home }), Mismatch);
-    await rm(directory, { recursive: true, force: true });
   } finally {
+    await rm(directory, { recursive: true, force: true });
     await protocol.dispose();
   }
 });

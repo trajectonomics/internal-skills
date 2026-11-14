@@ -8,10 +8,11 @@
 //   node scripts/check-traj-validation.mjs --traj "npx -y @trajectonomics/cli@latest"
 //   node scripts/check-traj-validation.mjs --fixture test/fixtures/traj/fixture.json
 //
-// Three modes. The default builds the ledger and checks everything.
+// Four modes. The default builds the ledger and checks everything.
 //   --verify <TRAJ_HOME>           judge a ledger an agent built: the as-of echo, the net worth, the period result
 //   --verify-scenario <TRAJ_HOME>   judge the what-if an agent stored: amounts in minor units
-// Neither writes to the ledger it is given.
+//   --verify-plan <TRAJ_HOME>       judge the plan an agent stored: its FI answer on the fixture's horizon
+// None of the verify modes writes to the ledger it is given.
 //
 // Exit 0 all expectations met, 1 a mismatch, 2 the fixture or the CLI could not be used.
 import { spawnSync } from 'node:child_process';
@@ -32,6 +33,7 @@ function parseArgs(argv) {
     else if (flag === '--fixture' && value) options.fixture = value;
     else if (flag === '--verify' && value) options.verify = value;
     else if (flag === '--verify-scenario' && value) options.verifyScenario = value;
+    else if (flag === '--verify-plan' && value) options.verifyPlan = value;
     else throw new Error(`unknown argument: ${flag}`);
     index += 1;
   }
@@ -46,11 +48,12 @@ export { Mismatch };
  * Run the CLI and return its parsed JSON. `expect` is the exit code the call must
  * report inside the envelope (or from the process); a mismatch is a finding, not a crash.
  */
-function traj(binary, argv, { home, expectExit = 0 } = {}) {
+function traj(binary, argv, { home, expectExit = 0, input } = {}) {
   const [command, ...prefix] = binary.split(/\s+/).filter(Boolean);
   const result = spawnSync(command, [...prefix, ...argv, '--json'], {
     env: { ...process.env, TRAJ_HOME: home, TRAJ_FORMAT: 'json' },
     encoding: 'utf8',
+    input,
     maxBuffer: 32 * 1024 * 1024,
     timeout: 600_000,
   });
@@ -107,8 +110,13 @@ function byAccount(rows, key = 'account') {
   return Object.fromEntries(rows.map((row) => [row[key].name, row.amount]));
 }
 
+/** One rendered amount, in the form the CLI prints it. */
+function money(currency, amount) {
+  return `${currency} ${amount}`;
+}
+
 function totals(rows) {
-  return rows.map((row) => `${row.currency} ${row.amount}`);
+  return rows.map((row) => money(row.currency, row.amount));
 }
 
 /**
@@ -225,17 +233,53 @@ function readStep(trajBinary, fixture, home, notes) {
   notes.push(same('read: pnl total', fixture.expected.pnl.total, totals(pnl.totals).join(', ')));
 }
 
-function scenarioStep(trajBinary, fixture, home, documentPath, notes) {
+/**
+ * The Ledger mints account ids, and a Scenario has to declare those ids (cli ADR 0026), so the
+ * fixture document names its accounts symbolically and this links each one to the id the Ledger
+ * actually minted. Without the link a projection refuses the Baseline as undeclared.
+ */
+function ledgerAccountIds(trajBinary, home) {
+  const listed = traj(trajBinary, ['account', 'list'], { home });
+  return Object.fromEntries(listed.accounts.map((account) => [account.name, account.id]));
+}
+
+function linkScenario(document, symbolicNames, accountIds) {
+  const id = (symbol) => {
+    if (!(symbol in symbolicNames)) return symbol;
+    const name = symbolicNames[symbol];
+    const resolved = accountIds[name];
+    if (!resolved) throw new Error(`the fixture's Scenario names an account the Ledger does not have: ${name}`);
+    return resolved;
+  };
+
+  return {
+    ...document,
+    accounts: document.accounts.map((account) => ({ ...account, id: id(account.id) })),
+    flows: document.flows.map((flow) => (flow.target ? { ...flow, target: id(flow.target) } : flow)),
+    cashflow: {
+      ...document.cashflow,
+      surplus: document.cashflow.surplus.map((entry) => ({ ...entry, account: id(entry.account) })),
+      contribute: document.cashflow.contribute.map(id),
+      withdraw: document.cashflow.withdraw.map(id),
+    },
+  };
+}
+
+async function scenarioStep(trajBinary, fixture, home, documentPath, notes) {
   const scenario = fixture.expected.scenario;
+  const document = JSON.parse(await readFile(documentPath, 'utf8'));
+  const linked = linkScenario(document, scenario.accounts, ledgerAccountIds(trajBinary, home));
+  const stdin = JSON.stringify(linked);
+
   const applied = traj(
     trajBinary,
-    ['scenario', 'apply', scenario.base, '--file', documentPath, '--dry-run'],
-    { home },
+    ['scenario', 'apply', scenario.base, '--file', '-', '--dry-run'],
+    { home, input: stdin },
   );
   notes.push(same('scenario: a dry run reports the write it would make', scenario.dryRunStatus, applied.status));
   notes.push(same('scenario: a dry run rolls the write back, so no id is minted', null, applied.scenario.id));
 
-  const base = traj(trajBinary, ['scenario', 'apply', scenario.base, '--file', documentPath], { home });
+  const base = traj(trajBinary, ['scenario', 'apply', scenario.base, '--file', '-'], { home, input: stdin });
   notes.push(
     same(
       `scenario: the document states ${scenario.overridePath} before the what-if`,
@@ -268,13 +312,105 @@ function scenarioStep(trajBinary, fixture, home, documentPath, notes) {
   );
 }
 
-function capabilityStep(trajBinary, fixture, home, notes) {
+/**
+ * The planning half of the cli ADR 0002 test: the projection, the FI answer and the what-if the
+ * conversation asks for. The plan states no interest and no inflation, so the numbers are
+ * arithmetic a person can check: net worth grows by 60,800.00 a month for ten years.
+ */
+function planStep(trajBinary, fixture, home, notes) {
+  const plan = fixture.expected.plan;
+  const base = fixture.expected.scenario.base;
   const schema = traj(trajBinary, ['schema'], { home });
   const names = schema.commands.map((command) => command.name);
-  for (const missing of fixture.expected.missingCapabilities) {
-    const present = names.some((name) => name === missing || name.startsWith(`${missing} `));
-    notes.push(same(`capability: v0.1.0 has no "${missing}" command, so an agent must say so`, false, present));
+  for (const needed of ['projection run', 'projection compare', 'fi']) {
+    notes.push(
+      same(`plan: "${needed}" is a command, so the planning questions have an answer`, true, names.includes(needed)),
+    );
   }
+
+  const projection = traj(
+    trajBinary,
+    ['projection', 'run', '--scenario', base, '--as-of', plan.asOf, '--horizon', plan.horizon],
+    { home },
+  );
+  const annual = projection.tables.find((table) => table.name === 'annual');
+  const first = annual.rows[0];
+  notes.push(same('plan: the projection echoes the as-of date', plan.asOf, projection.asOf));
+  notes.push(same('plan: the projection states that no tax is applied', plan.tax, projection.tax));
+  notes.push(same('plan: the plan never runs out of money', plan.runsOut, projection.runsOut));
+  notes.push(same('plan: annual roll-up rows', plan.annualRows, annual.count));
+  notes.push(
+    same(
+      'plan: first-year closing net worth',
+      plan.firstYear.closingNetWorth,
+      money(projection.currency, first.closingNetWorth),
+    ),
+  );
+  notes.push(same('plan: first-year income', plan.firstYear.income, money(projection.currency, first.income)));
+  notes.push(same('plan: first-year expenses', plan.firstYear.expense, money(projection.currency, first.expense)));
+  notes.push(
+    same(
+      'plan: net worth at the horizon',
+      plan.finalNetWorth,
+      money(projection.currency, annual.rows.at(-1).closingNetWorth),
+    ),
+  );
+
+  const fi = traj(trajBinary, ['fi', '--scenario', base, '--as-of', plan.asOf, '--horizon', plan.horizon], { home });
+  notes.push(same('plan: the FI method is survival', plan.method, fi.method));
+  notes.push(same('plan: the FI answer is reachable', true, fi.fi.reachable));
+  notes.push(same('plan: the FI date', plan.fiDate, fi.fi.fiDate));
+
+  const compare = traj(
+    trajBinary,
+    ['projection', 'compare', base, '--set', plan.whatIf.override, '--as-of', plan.asOf, '--horizon', plan.horizon],
+    { home },
+  );
+  notes.push(
+    same(
+      'plan: the what-if leaves the FI date alone (deltas.fiMonths)',
+      plan.whatIf.fiMonthsDelta,
+      compare.deltas.fiMonths,
+    ),
+  );
+  notes.push(
+    same(
+      'plan: the what-if leaves the final net worth alone (deltas.netWorth.nominal)',
+      plan.whatIf.netWorthDelta,
+      compare.deltas.netWorth.nominal,
+    ),
+  );
+  notes.push(
+    same(
+      'plan: the what-if side ends at the same net worth',
+      plan.finalNetWorth,
+      money(compare.currency, compare.sides.b.netWorth.final.nominal),
+    ),
+  );
+}
+
+/**
+ * The plan leg of a harness run: the agent stored its plan as a Scenario, and running `fi` on it
+ * over the fixture's horizon gives the date the conversation asks for. The conversation pins the
+ * assumptions, so the date does not depend on how the agent named or grouped its accounts.
+ */
+function planVerifyStep(trajBinary, fixture, home, notes) {
+  const plan = fixture.expected.plan;
+  const listed = traj(trajBinary, ['scenario', 'list'], { home });
+  notes.push(same('plan: the plan is stored as a Scenario', true, listed.scenarios.length > 0));
+
+  const dates = listed.scenarios.map((entry) => {
+    const answer = traj(trajBinary, ['fi', '--scenario', entry.name, '--as-of', plan.asOf, '--horizon', plan.horizon], {
+      home,
+    });
+    return answer.fi?.fiDate ?? null;
+  });
+  if (!dates.includes(plan.fiDate)) {
+    throw new Mismatch(
+      `plan: the stored Scenarios answer ${JSON.stringify(dates)} for the financial-independence question, expected ${plan.fiDate}`,
+    );
+  }
+  notes.push(`plan: a stored Scenario answers the FI question with ${plan.fiDate}`);
 }
 
 export async function check(options = {}) {
@@ -284,9 +420,14 @@ export async function check(options = {}) {
   const documentPath = resolve(dirname(fixturePath), fixture.expected.scenario.document);
   const notes = [];
 
-  // `--verify <TRAJ_HOME>` judges a ledger some agent built from the same conversation, which
-  // is the only way to measure a harness run. It reads and never writes, and it compares only
-  // the figures the user asked for: an agent may name its accounts and shape its rows freely.
+  // The verify modes judge a home some agent built from the same conversation, which is the
+  // only way to measure a harness run. They read and never write.
+  const verifyPlan = options.verifyPlan;
+  if (verifyPlan) {
+    planVerifyStep(trajBinary, fixture, verifyPlan, notes);
+    return notes;
+  }
+
   const verifyScenario = options.verifyScenario;
   if (verifyScenario) {
     scenarioVerifyStep(trajBinary, fixture, verifyScenario, notes);
@@ -310,9 +451,9 @@ export async function check(options = {}) {
 
     recordStep(trajBinary, fixture, home, notes);
     readStep(trajBinary, fixture, home, notes);
-    scenarioStep(trajBinary, fixture, home, documentPath, notes);
-    capabilityStep(trajBinary, fixture, home, notes);
-    // `keepHome` is the seam the test uses to judge a known-good home with the two
+    await scenarioStep(trajBinary, fixture, home, documentPath, notes);
+    planStep(trajBinary, fixture, home, notes);
+    // `keepHome` is the seam the test uses to judge a known-good home with the
     // --verify modes, which would otherwise have nothing to point at.
     if (options.keepHome) return { notes, home, dispose: () => rm(home, { recursive: true, force: true }) };
     return notes;
@@ -336,7 +477,8 @@ if (invokedDirectly) {
     console.log(
       `\nPASS: ${notes.length} expectations met with ${options.traj}, fixture ${options.fixture}` +
         (options.verify ? `, ledger ${options.verify}` : '') +
-        (options.verifyScenario ? `, scenarios ${options.verifyScenario}` : ''),
+        (options.verifyScenario ? `, scenarios ${options.verifyScenario}` : '') +
+        (options.verifyPlan ? `, plan ${options.verifyPlan}` : ''),
     );
   } catch (error) {
     if (error instanceof Mismatch) {

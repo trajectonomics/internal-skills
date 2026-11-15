@@ -80,6 +80,16 @@ Report the financial-independence date together with the horizon and the assumpt
 
 Phase 1 is record, project and answer. V1 is THB and Thailand; the United States follows later, and multi-currency does not.
 
-`traj schema` is the honest answer to "what can it do": read it before you promise anything. When a capability is absent from it — tax, or projections and financial independence in an older release — say that this version of `traj` cannot answer it, offer the record-and-report part you can do, and leave the missing number missing rather than approximating it.
+`traj schema` is the honest answer to "what can it do": read it before you promise anything. When a capability is absent from it — a second jurisdiction, an allowance optimiser, or projections and financial independence in an older release — say that this version of `traj` cannot answer it, offer the record-and-report part you can do, and leave the missing number missing rather than approximating it.
 
-Every result you give the user states the as-of date it was read at, and whether tax is in it. A figure without those two is one they will misread. Until a tax core is wired in, every `traj` result says tax is not applied: a figure is pre-tax, and you never estimate the tax yourself — say it is not included and let the user decide what to do about it.
+Every result you give the user states the as-of date it was read at, and whether tax is in it. A figure without those two is one they will misread.
+
+## Tax
+
+Tax belongs to the Scenario, not to a projection call: `traj scenario tax <name> --tax th-2026` writes Thailand's 2026 personal income tax into it, and every projection of that Scenario then reports `tax: applied`. A Scenario without it is projected pre-tax and every result says `not_applied`.
+
+The Levy tallies labels and never guesses them, so an income Flow with no label tax-core recognises is income it charges nothing for. `traj scenario tax` refuses that by name, and `--label <flow>=<label>` is how you classify it: `income.section40_1` for employment, `income.section40_2` for service and hire of work, and the rest of Section 40 from `traj schema scenario tax`. Ask the user which class their income is; never pick one to make the command pass. Retirement contributions take their own labels (`allowance.retirement.rmf` and friends) and raise the allowance they feed.
+
+Read the taxpayer's facts from the user: filing status, children, and how many of those children were born in 2018 or later. `--none` removes the Levy and its labels, so a Scenario can go back to pre-tax. Re-applying a Scenario's document replaces it, Levy included: after `scenario apply`, run `scenario tax` again.
+
+You never estimate tax yourself, and you never apply it silently. When a result says `not_applied`, say the figures are before tax and offer to apply it; when it says `applied`, report that with the figures, because the tax is already in them.

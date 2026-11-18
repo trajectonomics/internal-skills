@@ -37,4 +37,4 @@ Install this repository's own skills separately:
 npx skills add trajectonomics/internal-skills -y
 ```
 
-Omit `-y` to review the plan first. The bare command installs **every** skill in this repository, `pick-the-issue` and the Factory-only `human-*` skills included, which is what the organisation wants in a Factory repository and what someone outside it does not: `traj` is a customer's operating Skill, and it publishes from [`trajectonomics/skills`](https://github.com/trajectonomics/skills).
+Omit `-y` to review the plan first. The command above installs **every** skill in this repository, `pick-the-issue` and the Factory-only `human-*` skills included, which is what the organisation wants in a Factory repository and what someone outside it does not: `traj` is a customer's operating Skill, and it publishes from [`trajectonomics/skills`](https://github.com/trajectonomics/skills).

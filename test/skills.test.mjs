@@ -57,9 +57,9 @@ test('the README no longer gives the outsider traj install', async () => {
     readme.includes('npx skills add trajectonomics/internal-skills -y'),
     'the bare install command stays, and so does its warning',
   );
-  assert.match(
-    readme.toLowerCase(),
-    /every skill/,
+  const warning = readme.toLowerCase();
+  assert.ok(
+    warning.includes('every skill') || warning.includes('all skills'),
     'the README must warn that the bare command installs every skill',
   );
 });
